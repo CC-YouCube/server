@@ -5,10 +5,10 @@ on:
   push:
     branches-ignore: [main]
     paths:
-      - "server/**"
+      - "src/**"
   pull_request:
     paths:
-      - "server/**"
+      - "src/**"
 
 jobs:
   build-image:
@@ -21,4 +21,4 @@ jobs:
       - name: Build image 🔨
         uses: docker/build-push-action@v3
         with:
-          context: server
+          context: src
