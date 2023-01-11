@@ -14,11 +14,6 @@ jobs:
   build-image:
     runs-on: ubuntu-latest
 
-    # When the pull request is not from a fork,
-    # then the workflow is triggered by "push" and "pull_request"
-    # To not run a workflow 2 times, we check if the pull request is from a fork
-    if: ${{ github.event_name != 'pull_request' || github.repository_owner != 'Commandcracker' }}
-
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v3

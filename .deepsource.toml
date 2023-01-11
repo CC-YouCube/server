@@ -12,4 +12,4 @@ name = "docker"
 enabled = true
 
   [analyzers.meta]
-  dockerfile_paths = ["server/Dockerfile"]
+  dockerfile_paths = ["src/Dockerfile"]

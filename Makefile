@@ -1,32 +1,19 @@
 #!make
 
-run-server:
-	python server/youcube
-
-run-client:
-	craftos --id 2828 --exec "shell.run('clear') shell.run('youcube')" --mount-ro /=./client
+run:
+	python src/youcube
 
 docker-build:
-	docker build -t youcube:latest server/.
-
-illuaminate-lint:
-	illuaminate lint
+	docker build -t youcube:latest src/.
 
 pylint:
-	pylint server/youcube/*.py
+	pylint src/youcube/*.py
 
 pyspelling:
 	pyspelling
 
-illuaminate-doc-gen:
-	illuaminate doc-gen
-
 cleanup:
-	rm doc server/data server/__pycache__ -Rv || true
-
-install-illuaminate-linux:
-	wget https://squiddev.cc/illuaminate/bin/latest/illuaminate-linux-x86_64 -O /usr/bin/illuaminate
-	chmod +x /usr/bin/illuaminate
+	rm src/data src/__pycache__ -Rv || true
 
 install-pylint:
 	pip install pylint
