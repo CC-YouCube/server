@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "server/**"
+      - "src/**"
 
 env:
   REGISTRY: ghcr.io
@@ -38,7 +38,7 @@ jobs:
       - name: 🔨 Build and Publish 🚀
         uses: docker/build-push-action@v3
         with:
-          context: server
+          context: src
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
