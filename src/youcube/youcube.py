@@ -352,6 +352,7 @@ def main() -> None:
     port = int(getenv("PORT", "5000"))
     host = getenv("HOST", "0.0.0.0")
     trusted_proxies = getenv("TRUSTED_PROXIES")
+    fast = False if getenv("NO_FAST") else True
 
     proxies = None
 
@@ -360,7 +361,7 @@ def main() -> None:
         for proxy in trusted_proxies.split(","):
             proxies.append(proxy)
 
-    app.run(host=host, port=port, fast=True)
+    app.run(host=host, port=port, fast=fast)
 
 
 if __name__ == "__main__":
