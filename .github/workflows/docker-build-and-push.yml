@@ -40,5 +40,5 @@ jobs:
         with:
           context: src
           push: true
-          tags: ghcr.io/CC-YouCube/youcube:latest
+          tags: ghcr.io/cc-youcube/youcube:latest
           labels: ${{ steps.meta.outputs.labels }}
