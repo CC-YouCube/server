@@ -6,8 +6,8 @@ FROM alpine:3.17.0 as sanjuuni
 # TODO: use the same ffmpeg for sanjuuni
 RUN set -eux; \
     apk add --no-cache --update g++ zlib-dev poco-dev make ffmpeg-dev; \
-    wget -O sanjuuni.tar.gz https://github.com/MCJack123/sanjuuni/archive/30dcabb4b56f1eb32c88e1bce384b0898367ebda.tar.gz; \
-    echo "029eb0e8853eccc74ea328bb5933678e60e2c56f03f321bf5f982643768b2877 *sanjuuni.tar.gz" | sha256sum -c -; \
+    wget -O sanjuuni.tar.gz https://github.com/MCJack123/sanjuuni/archive/81e66619143c70dea3b26efffb358d257187ed1f.tar.gz; \
+    echo "09fb0d5cf28c39eef875ce0650a7bb389c885e3bfff641529985c7ce658f0b8a *sanjuuni.tar.gz" | sha256sum -c -; \
     mkdir -p sanjuuni; \
     tar -xC sanjuuni --strip-components=1 -f sanjuuni.tar.gz; \
     rm sanjuuni.tar.gz;
@@ -25,8 +25,8 @@ COPY youcube ./youcube
 COPY compile.py .
 
 RUN set -eux; \
-    apk add --no-cache --update gcc libc-dev libstdc++-dev; \
-    pip install --no-cache-dir --use-pep517 -r requirements.txt; \
+    apk add --no-cache --update build-base; \
+    pip install --no-cache-dir --use-pep517 -U setuptools -r requirements.txt; \
     python3 compile.py; \
     pip uninstall pip -y
 

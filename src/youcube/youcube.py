@@ -6,14 +6,22 @@ YouCube Server
 """
 
 # built-in modules
+from yc_utils import (
+    is_save,
+    cap_width_and_height,
+    get_video_name,
+    get_audio_name
+)
+from yc_colours import Foreground, RESET
+from yc_download import download, DATA_FOLDER, FFMPEG_PATH, SANJUUNI_PATH
+from yc_magic import run_function_in_thread_from_async_function
+from yc_logging import setup_logging, NO_COLOR
 from os.path import join
 from os import getenv
 from json import loads as load_json
 from json.decoder import JSONDecodeError
-from logging import Logger
 from asyncio import get_event_loop
 from typing import (
-    Callable,
     Union,
     Tuple,
     Type,
@@ -22,6 +30,7 @@ from typing import (
 )
 from base64 import b64encode
 from shutil import which
+from json import dumps
 
 try:
     from types import UnionType
@@ -30,26 +39,15 @@ except ImportError:
 
 
 # pip modules
-from aiohttp.web import (
+from sanic import (
+    Sanic,
     Request,
-    WebSocketResponse,
-    Response,
-    WSMsgType,
-    Application,
-    run_app
+    Websocket
 )
+from sanic.response import text
+from sanic.handlers import ErrorHandler
 
 # local modules
-from yc_logging import setup_logging, NO_COLOR
-from yc_magic import run_function_in_thread_from_async_function
-from yc_download import download, DATA_FOLDER, FFMPEG_PATH, SANJUUNI_PATH
-from yc_colours import Foreground, RESET
-from yc_utils import (
-    is_save,
-    cap_width_and_height,
-    get_video_name,
-    get_audio_name
-)
 
 VERSION = "0.0.0-poc.1.0.2"
 API_VERSION = "0.0.0-poc.1.0.0"  # https://commandcracker.github.io/YouCube/
@@ -100,19 +98,6 @@ def get_chunk(media_file: str, chunkindex: int) -> bytes:
     return chunk
 
 
-def get_peername_host(request: Request) -> str:
-    """
-    Returns the Host of the web-request
-    """
-    peername = request.transport.get_extra_info('peername')
-
-    if peername is not None:
-        host, *_ = peername
-        return host
-
-    return None
-
-
 class UntrustedProxy(Exception):
     """
     Occurs when someone connects through an untrusted proxy
@@ -126,7 +111,7 @@ def get_client_ip(request: Request, trusted_proxies: list) -> str:
     """
     Returns the real client IP
     """
-    peername_host = get_peername_host(request)
+    peername_host = request.ip
 
     if trusted_proxies is None:
         return peername_host
@@ -177,7 +162,7 @@ class Actions:
     # pylint: disable=missing-function-docstring
 
     @staticmethod
-    async def request_media(message: dict, resp: WebSocketResponse):
+    async def request_media(message: dict, resp: Websocket):
         loop = get_event_loop()
         # get "url"
         url = message.get("url")
@@ -280,112 +265,76 @@ class Actions:
     # pylint: enable=missing-function-docstring
 
 
-class Server:
+class CustomErrorHandler(ErrorHandler):
+    def default(self, request: Request, exception: Exception):
+        ''' handles errors that have no error handlers assigned '''
+        # You custom error handling logic...
+
+        msg = "Failed to open a WebSocket connection.\nSee server log for more information.\n"
+        if request.method == "GET" and request.path == "/" and str(exception) == msg:
+            return text("You cannot access a WebSocket server directly. You need a WebSocket client.")
+
+        return super().default(request, exception)
+
+
+app = Sanic(__name__)
+app.error_handler = CustomErrorHandler()
+# FIXME: The Client is not Responsing to Websocket pings
+app.config.WEBSOCKET_PING_INTERVAL = 0
+
+actions = {}
+
+# add all actions from default action set
+for method in dir(Actions):
+    if not method.startswith('__'):
+        actions[method] = getattr(Actions, method)
+logger = setup_logging()
+
+trusted_proxies = getenv("TRUSTED_PROXIES")
+
+proxies = None
+
+if trusted_proxies is not None:
+    proxies = []
+    for proxy in trusted_proxies.split(","):
+        proxies.append(proxy)
+
+
+@app.websocket("/")
+async def wshandler(request: Request, ws: Websocket):
     """
-    The Web socket server Object
-    """
-
-    def __init__(self, logger: Logger, trusted_proxies: list) -> None:
-        self.logger = logger
-        self.trusted_proxies = trusted_proxies
-        self.actions = {}
-
-        # add all actions from default action set
-
-        for method in dir(Actions):
-            if not method.startswith('__'):
-                self.actions[method] = getattr(Actions, method)
-
-    @staticmethod
-    async def on_shutdown(app: Application):
-        """
-        Clears all web-sockets from the list
-        """
-
-        for websocket in app["sockets"]:
-            await websocket.close()
-
-    def init(self):
-        """
-        Initialize the web-socket server
-        """
-        app = Application()
-        app["sockets"] = []
-        app.router.add_get("/", self.wshandler)
-        app.on_shutdown.append(self.on_shutdown)
-        return app
-
-    def register_action(
-        self,
-        name: str,
-        func: Callable[
-            [dict, WebSocketResponse],
-            Union[dict, None]
-        ]
-    ):
-        """
-        Add and action / "endpoint" to the ws server
-        """
-        if name in self.actions:
-            return False, f"action \"{name}\" is already registerd!"
-        self.actions[name] = func
-        return True
-
-    async def wshandler(self, request: Request):
-        """
         Handels web-socket requests
-        """
-        resp = WebSocketResponse()
-        available = resp.can_prepare(request)
-        if not available:
-            return Response(
-                body="You cannot access a WebSocket server directly. You need a WebSocket client.",
-                content_type="text"
-            )
+     """
+    client_ip = get_client_ip(request, trusted_proxies)
+    if NO_COLOR:
+        prefix = f"[{client_ip}] "
+    else:
+        prefix = f"{Foreground.BLUE}[{client_ip}]{RESET} "
 
-        await resp.prepare(request)
+    logger.info(prefix + "Connected!")
+
+    logger.debug(
+        prefix +
+        "My headers are: " +
+        str(request.headers)
+    )
+
+    while True:
+        message = await ws.recv()
+        logger.debug(prefix + "Message: " + message)
 
         try:
-            request.app["sockets"].append(resp)
+            message: dict = load_json(message)
+        except JSONDecodeError:
+            logger.debug(prefix + "Faild to parse Json")
+            await ws.send(dumps({
+                "action": "error",
+                "message": "Faild to parse Json"
+            }))
 
-            client_ip = get_client_ip(request, self.trusted_proxies)
-            if NO_COLOR:
-                prefix = f"[{client_ip}] "
-            else:
-                prefix = f"{Foreground.BLUE}[{client_ip}]{RESET} "
-
-            self.logger.info(prefix + "Connected!")
-
-            self.logger.debug(
-                prefix +
-                "My headers are: " +
-                str(request.headers)
-            )
-
-            async for msg in resp:
-                resp: WebSocketResponse
-                if msg.type == WSMsgType.TEXT:
-                    self.logger.debug(prefix + "Message: " + msg.data)
-                    try:
-                        message: dict = load_json(msg.data)
-
-                        if message.get("action") in self.actions:
-                            response = await self.actions[message.get("action")](message, resp)
-                            await resp.send_json(response)
-                    except JSONDecodeError:
-                        self.logger.debug(prefix + "Faild to parse Json")
-                        await resp.send_json({
-                            "action": "error",
-                            "message": "Faild to parse Json"
-                        })
-
-                else:
-                    return resp
-            return resp
-
-        finally:
-            request.app["sockets"].remove(resp)
-            self.logger.info(prefix + "Disconnected!")
+        if message.get("action") in actions:
+            response = await actions[message.get("action")](message, ws)
+            await ws.send(dumps(response))
 
 
 def main() -> None:
@@ -401,7 +350,7 @@ def main() -> None:
         logger.warning("Sanjuuni not found.")
 
     port = int(getenv("PORT", "5000"))
-    host = getenv("HOST","0.0.0.0")
+    host = getenv("HOST", "0.0.0.0")
     trusted_proxies = getenv("TRUSTED_PROXIES")
 
     proxies = None
@@ -411,12 +360,7 @@ def main() -> None:
         for proxy in trusted_proxies.split(","):
             proxies.append(proxy)
 
-    server = Server(logger, proxies)
-
-    if not NO_COLOR:
-        print(Foreground.BRIGHT_GREEN, end="")
-
-    run_app(server.init(), host=host, port=port)
+    app.run(host=host, port=port, fast=True)
 
 
 if __name__ == "__main__":

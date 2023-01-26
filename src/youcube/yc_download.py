@@ -26,10 +26,11 @@ from yc_utils import (
     get_audio_name,
     get_video_name
 )
+from json import dumps
 
 # pip modules
 from yt_dlp import YoutubeDL
-from aiohttp.web import WebSocketResponse
+from sanic import Websocket
 
 # pylint settings
 # pylint: disable=pointless-string-statement
@@ -45,7 +46,7 @@ SANJUUNI_PATH = getenv("SANJUUNI_PATH") or "sanjuuni"
 def download_video(
     temp_dir: str,
     media_id: str,
-    resp: WebSocketResponse,
+    resp: Websocket,
     loop,
     width: int,
     height: int
@@ -53,10 +54,10 @@ def download_video(
     """
     Converts the downloaded video to 32vid
     """
-    run_coroutine_threadsafe(resp.send_json({
+    run_coroutine_threadsafe(resp.send(dumps({
         "action": "status",
         "message": "Converting video to 32vid ..."
-    }), loop)
+    })), loop)
 
     if NO_COLOR:
         prefix = "[Sanjuuni]"
@@ -65,10 +66,10 @@ def download_video(
 
     def handler(line):
         logger.debug("%s%s", prefix, line)
-        run_coroutine_threadsafe(resp.send_json({
+        run_coroutine_threadsafe(resp.send(dumps({
             "action": "status",
             "message": line
-        }), loop)
+        })), loop)
 
     returncode = run_with_live_output(
         [
@@ -86,20 +87,20 @@ def download_video(
     )
 
     if returncode != 0:
-        run_coroutine_threadsafe(resp.send_json({
+        run_coroutine_threadsafe(resp.send(dumps({
             "action": "error",
             "message": "Faild to convert video!"
-        }), loop)
+        })), loop)
 
 
-def download_audio(temp_dir: str, media_id: str, resp: WebSocketResponse, loop):
+def download_audio(temp_dir: str, media_id: str, resp: Websocket, loop):
     """
     Converts the downloaded audio to dfpwm
     """
-    run_coroutine_threadsafe(resp.send_json({
+    run_coroutine_threadsafe(resp.send(dumps({
         "action": "status",
         "message": "Converting audio to dfpwm ..."
-    }), loop)
+    })), loop)
 
     if NO_COLOR:
         prefix = "[FFmpeg]"
@@ -123,13 +124,13 @@ def download_audio(temp_dir: str, media_id: str, resp: WebSocketResponse, loop):
     )
 
     if returncode != 0:
-        run_coroutine_threadsafe(resp.send_json({
+        run_coroutine_threadsafe(resp.send(dumps({
             "action": "error",
             "message": "Faild to convert audio!"
-        }), loop)
+        })), loop)
 
 
-def download(url: str, resp: WebSocketResponse, loop, width: int, height: int) -> str:
+def download(url: str, resp: Websocket, loop, width: int, height: int) -> str:
     """
     Downloads and converts the media from the give URL
     """
@@ -137,13 +138,13 @@ def download(url: str, resp: WebSocketResponse, loop, width: int, height: int) -
     def my_hook(info):
         """https://github.com/yt-dlp/yt-dlp#adding-logger-and-progress-hook"""
         if info.get('status') == "downloading":
-            run_coroutine_threadsafe(resp.send_json({
+            run_coroutine_threadsafe(resp.send(dumps({
                 "action": "status",
                 "message": remove_ansi_escape_codes(
                     # pylint: disable-next=line-too-long
                     f"download {remove_whitespace(info.get('_percent_str'))} ETA {info.get('_eta_str')}"
                 )
-            }), loop)
+            })), loop)
 
     with TemporaryDirectory(prefix="youcube-") as temp_dir:
         yt_dl_options = {
@@ -158,10 +159,10 @@ def download(url: str, resp: WebSocketResponse, loop, width: int, height: int) -
 
         yt_dl = YoutubeDL(yt_dl_options)
 
-        run_coroutine_threadsafe(resp.send_json({
+        run_coroutine_threadsafe(resp.send(dumps({
             "action": "status",
             "message": "Getting resource information ..."
-        }), loop)
+        })), loop)
 
         data = yt_dl.extract_info(url, download=False)
 
@@ -208,10 +209,10 @@ def download(url: str, resp: WebSocketResponse, loop, width: int, height: int) -
         video_downloaded = is_video_already_downloaded(media_id, width, height)
 
         if not audio_downloaded or (not video_downloaded and video):
-            run_coroutine_threadsafe(resp.send_json({
+            run_coroutine_threadsafe(resp.send(dumps({
                 "action": "status",
                 "message": "Downloading resource ..."
-            }), loop)
+            })), loop)
 
             yt_dl.process_video_result(data, download=True)
 
