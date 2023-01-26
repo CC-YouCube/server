@@ -49,7 +49,7 @@ Environment variables you can use to configure the server.
 version: "2.0"
 services:
   youcube:
-    image: ghcr.io/commandcracker/youcube:main
+    image: ghcr.io/cc-youcube/youcube:latest
     restart: always
     hostname: youcube
     ports:
