@@ -1,15 +1,17 @@
-# TODO: change from ffmpeg 5.1+ to yt-dlp/FFmpeg
-FROM jrottenberg/ffmpeg:5.1-alpine AS ffmpeg
+FROM ghcr.io/commandcracker/ffmpeg:latest AS ffmpeg
 
-FROM alpine:3.17.0 as sanjuuni
+FROM ffmpeg as sanjuuni
 
-# TODO: use the same ffmpeg for sanjuuni
+ENV SANJUUNI_VERSION=0.3
+
+ARG SANJUUNI_SHA512SUM="2aee316cc97f70d0f6935f9126721ae35f96d1570a96a757a5f680493856287c0620ef0ee0dc982d51417aa1a40b57f9e588dc9672c719aaa5e34552163dcd16 *sanjuuni.tar.gz"
+
 RUN set -eux; \
-    apk add --no-cache --update g++ zlib-dev poco-dev make ffmpeg-dev; \
-    wget -O sanjuuni.tar.gz https://github.com/MCJack123/sanjuuni/archive/81e66619143c70dea3b26efffb358d257187ed1f.tar.gz; \
-    echo "09fb0d5cf28c39eef875ce0650a7bb389c885e3bfff641529985c7ce658f0b8a *sanjuuni.tar.gz" | sha256sum -c -; \
-    mkdir -p sanjuuni; \
-    tar -xC sanjuuni --strip-components=1 -f sanjuuni.tar.gz; \
+    apk add --no-cache --update g++ zlib-dev poco-dev make; \
+    wget --output-document=sanjuuni.tar.gz https://github.com/MCJack123/sanjuuni/archive/${SANJUUNI_VERSION}.tar.gz; \
+    echo "${SANJUUNI_SHA512SUM}" | sha512sum -c -; \
+    mkdir --parents sanjuuni; \
+    tar --extract --directory sanjuuni --strip-components=1 --file=sanjuuni.tar.gz; \
     rm sanjuuni.tar.gz;
 
 WORKDIR /sanjuuni
@@ -18,7 +20,7 @@ RUN set -eux; \
     ./configure; \
     make
 
-FROM ghcr.io/commandcracker/alpine-pypy3.9-pip:3.17.0-pypy-7.3.10-pip-22.3.1 AS builder
+FROM ghcr.io/commandcracker/alpine-pypy3.9-pip:3.17.1-pypy-7.3.11-pip-22.3.1 AS builder
 
 COPY requirements.txt .
 COPY youcube ./youcube
@@ -30,7 +32,7 @@ RUN set -eux; \
     python3 compile.py; \
     pip uninstall pip -y
 
-FROM alpine:3.17.0 
+FROM alpine:3.17.1
 
 WORKDIR /opt/server
 
