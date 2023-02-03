@@ -14,7 +14,7 @@ Moor Information about the servers can be seen on the [doc](https://youcube.made
 - [yt-dlp/FFmpeg](https://github.com/yt-dlp/FFmpeg-Builds) / [FFmpeg 5.1+](https://ffmpeg.org/)
 - [sanjuuni](https://github.com/MCJack123/sanjuuni)
 - [Python 3.7+](https://www.python.org/downloads/)
-  - [aiohttp](https://pypi.org/project/aiohttp/)
+  - [sanic](https://sanic.dev/)
   - [yt-dlp](https://pypi.org/project/yt-dlp/)
 
 You can install the required packages with [pip](https://pip.pypa.io/en/stable/installation/) by running:
