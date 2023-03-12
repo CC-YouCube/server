@@ -2,12 +2,12 @@ FROM ghcr.io/commandcracker/ffmpeg:latest AS ffmpeg
 
 FROM ffmpeg as sanjuuni
 
-ENV SANJUUNI_VERSION=0.3
+ENV SANJUUNI_VERSION=0.4
 
-ARG SANJUUNI_SHA512SUM="2aee316cc97f70d0f6935f9126721ae35f96d1570a96a757a5f680493856287c0620ef0ee0dc982d51417aa1a40b57f9e588dc9672c719aaa5e34552163dcd16 *sanjuuni.tar.gz"
+ARG SANJUUNI_SHA512SUM="952a6c608d167f37faad53ee7f2e0de8090a02bf73b6455fae7c6b6f648dd6a188e7749fe26caeee85126b2a38d7391389c19afb0100e9962dc551188b9de6ae *sanjuuni.tar.gz"
 
 RUN set -eux; \
-    apk add --no-cache --update g++ zlib-dev poco-dev make; \
+    apk add --no-cache --update opencl-dev g++ zlib-dev poco-dev make; \
     wget --output-document=sanjuuni.tar.gz https://github.com/MCJack123/sanjuuni/archive/${SANJUUNI_VERSION}.tar.gz; \
     echo "${SANJUUNI_SHA512SUM}" | sha512sum -c -; \
     mkdir --parents sanjuuni; \
@@ -43,7 +43,7 @@ RUN set -eux; \
     # ffmpeg requirements
     libgcc libstdc++ ca-certificates libcrypto1.1 libssl1.1 libgomp expat \
     # sanjuuni requirements
-    poco; \
+    poco opencl; \
     chown 1000 /opt/server/
 
 COPY --from=builder /opt/pypy /opt/pypy
