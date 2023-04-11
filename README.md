@@ -20,13 +20,13 @@ Moor Information about the servers can be seen on the [doc](https://youcube.made
 You can install the required packages with [pip](https://pip.pypa.io/en/stable/installation/) by running:
 
 ```shell
-pip install -r server/requirements.txt
+pip install -r src/requirements.txt
 ```
 
 ## Starting the Server
 
 ```bash
-python server/youcube.py
+python src/youcube.py
 ```
 
 ## Environment variables
