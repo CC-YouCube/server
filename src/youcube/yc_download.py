@@ -41,11 +41,13 @@ from sanic import Websocket
 # pylint: disable=too-many-locals
 
 DATA_FOLDER = join(dirname(abspath(__file__)), "data")
-FFMPEG_PATH = getenv("FFMPEG_PATH") or "ffmpeg"
-SANJUUNI_PATH = getenv("SANJUUNI_PATH") or "sanjuuni"
+FFMPEG_PATH = getenv("FFMPEG_PATH", "ffmpeg")
+SANJUUNI_PATH = getenv("SANJUUNI_PATH", "sanjuuni")
+DISABLE_OPENCL = bool(getenv("DISABLE_OPENCL"))
+
+# pylint: disable=too-many-arguments
 
 
-# pylint: disable-next=too-many-arguments
 def download_video(
     temp_dir: str,
     media_id: str,
@@ -84,16 +86,21 @@ def download_video(
             "-o", join(
                 DATA_FOLDER,
                 get_video_name(media_id, width, height)
-            )
+            ),
+            "--disable-opencl" if DISABLE_OPENCL else ""
         ],
         handler
     )
 
     if returncode != 0:
+        logger.warning("%sSanjuuni exited with", returncode)
         run_coroutine_threadsafe(resp.send(dumps({
             "action": "error",
             "message": "Faild to convert video!"
         })), loop)
+
+
+# pylint: enable=too-many-arguments
 
 
 def download_audio(temp_dir: str, media_id: str, resp: Websocket, loop):
@@ -127,6 +134,7 @@ def download_audio(temp_dir: str, media_id: str, resp: Websocket, loop):
     )
 
     if returncode != 0:
+        logger.warning("%sFFmpeg exited with", returncode)
         run_coroutine_threadsafe(resp.send(dumps({
             "action": "error",
             "message": "Faild to convert audio!"

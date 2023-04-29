@@ -43,6 +43,7 @@ Environment variables you can use to configure the server.
 | `SANJUUNI_PATH`   | `sanjuuni` | Path to the Sanjuuni executable             |
 | `NO_COLOR`        | `False`    | Disable colored output                      |
 | `LOGLEVEL`        | `DEBUG`    | Python Log level of the main logger         |
+| `DISABLE_OPENCL`  |            | Disables sanjuuni GPU acceleration          |
 
 ## Docker Compose
 
