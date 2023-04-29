@@ -5,10 +5,10 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "server/**.py"
+      - "src/**.py"
   pull_request:
     paths:
-      - "server/**.py"
+      - "src/**.py"
 
 jobs:
   spellcheck:
