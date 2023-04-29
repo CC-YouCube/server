@@ -8,9 +8,8 @@ Download Functionality of YC
 # Built-in modules
 from tempfile import TemporaryDirectory
 from asyncio import run_coroutine_threadsafe
-from os import listdir
+from os import listdir, getenv
 from os.path import join, dirname, abspath
-from os import getenv
 
 # Local modules
 from yc_logging import YTDLPLogger, logger, NO_COLOR
@@ -26,7 +25,11 @@ from yc_utils import (
     get_audio_name,
     get_video_name
 )
-from json import dumps
+
+try:
+    from ujson import dumps
+except ModuleNotFoundError:
+    from json import dumps
 
 # pip modules
 from yt_dlp import YoutubeDL

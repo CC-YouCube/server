@@ -6,20 +6,8 @@ YouCube Server
 """
 
 # built-in modules
-from yc_utils import (
-    is_save,
-    cap_width_and_height,
-    get_video_name,
-    get_audio_name
-)
-from yc_colours import Foreground, RESET
-from yc_download import download, DATA_FOLDER, FFMPEG_PATH, SANJUUNI_PATH
-from yc_magic import run_function_in_thread_from_async_function
-from yc_logging import setup_logging, NO_COLOR
 from os.path import join
 from os import getenv
-from json import loads as load_json
-from json.decoder import JSONDecodeError
 from asyncio import get_event_loop
 from typing import (
     Union,
@@ -30,7 +18,16 @@ from typing import (
 )
 from base64 import b64encode
 from shutil import which
-from json import dumps
+
+try:
+    from ujson import (
+        JSONDecodeError,
+        dumps,
+        loads as load_json
+    )
+except ModuleNotFoundError:
+    from json.decoder import JSONDecodeError
+    from json import dumps, loads as load_json
 
 try:
     from types import UnionType
@@ -48,6 +45,16 @@ from sanic.response import text
 from sanic.handlers import ErrorHandler
 
 # local modules
+from yc_utils import (
+    is_save,
+    cap_width_and_height,
+    get_video_name,
+    get_audio_name
+)
+from yc_colours import Foreground, RESET
+from yc_download import download, DATA_FOLDER, FFMPEG_PATH, SANJUUNI_PATH
+from yc_magic import run_function_in_thread_from_async_function
+from yc_logging import setup_logging, NO_COLOR
 
 VERSION = "0.0.0-poc.1.0.2"
 API_VERSION = "0.0.0-poc.1.0.0"  # https://commandcracker.github.io/YouCube/
@@ -58,7 +65,8 @@ CHUNK_SIZE = 16
 """
 CHUNKS_AT_ONCE should not be too big, [CHUNK_SIZE * 1024]
 because then the CC Computer cant decode the string fast enough!
-Also, it should not be too small because then the client would need to send thousands of WS messages
+Also, it should not be too small because then the client
+would need to send thousands of WS messages
 and that would also slow everything down! [CHUNK_SIZE * 1]
 """
 CHUNKS_AT_ONCE = CHUNK_SIZE * 256
@@ -106,6 +114,8 @@ class UntrustedProxy(Exception):
     def __str__(self) -> str:
         return "A client is not using a trusted proxy!"
 
+# pylint: disable=redefined-outer-name
+
 
 def get_client_ip(request: Request, trusted_proxies: list) -> str:
     """
@@ -125,6 +135,8 @@ def get_client_ip(request: Request, trusted_proxies: list) -> str:
         return x_forwarded_for or request.headers.get('True-Client-Ip')
 
     raise UntrustedProxy
+
+# pylint: enable=redefined-outer-name
 
 
 def assert_resp(
@@ -266,13 +278,22 @@ class Actions:
 
 
 class CustomErrorHandler(ErrorHandler):
+    """
+    Error handler for sanic
+    """
+
     def default(self, request: Request, exception: Exception):
         ''' handles errors that have no error handlers assigned '''
         # You custom error handling logic...
 
-        msg = "Failed to open a WebSocket connection.\nSee server log for more information.\n"
+        msg = \
+            "Failed to open a WebSocket connection." + \
+            "\nSee server log for more information.\n"
         if request.method == "GET" and request.path == "/" and str(exception) == msg:
-            return text("You cannot access a WebSocket server directly. You need a WebSocket client.")
+            return text(
+                "You cannot access a WebSocket server directly. "
+                "You need a WebSocket client."
+            )
 
         return super().default(request, exception)
 
@@ -281,6 +302,9 @@ app = Sanic(__name__)
 app.error_handler = CustomErrorHandler()
 # FIXME: The Client is not Responsing to Websocket pings
 app.config.WEBSOCKET_PING_INTERVAL = 0
+# FIXME: Add UVLOOP support for alpine pypy
+if getenv("SANIC_NO_UVLOOP"):
+    app.config.USE_UVLOOP = False
 
 actions = {}
 
@@ -292,6 +316,7 @@ logger = setup_logging()
 
 trusted_proxies = getenv("TRUSTED_PROXIES")
 
+# pylint: disable-next=invalid-name
 proxies = None
 
 if trusted_proxies is not None:
@@ -301,32 +326,31 @@ if trusted_proxies is not None:
 
 
 @app.websocket("/")
+# pylint: disable-next=invalid-name
 async def wshandler(request: Request, ws: Websocket):
-    """
-        Handels web-socket requests
-     """
+    """Handels web-socket requests"""
     client_ip = get_client_ip(request, trusted_proxies)
     if NO_COLOR:
         prefix = f"[{client_ip}] "
     else:
         prefix = f"{Foreground.BLUE}[{client_ip}]{RESET} "
 
-    logger.info(prefix + "Connected!")
+    logger.info("%sConnected!", prefix)
 
     logger.debug(
-        prefix +
-        "My headers are: " +
-        str(request.headers)
+        "%sMy headers are: %s",
+        prefix,
+        request.headers
     )
 
     while True:
         message = await ws.recv()
-        logger.debug(prefix + "Message: " + message)
+        logger.debug("%sMessage: %s", prefix, message)
 
         try:
             message: dict = load_json(message)
         except JSONDecodeError:
-            logger.debug(prefix + "Faild to parse Json")
+            logger.debug("%sFaild to parse Json", prefix)
             await ws.send(dumps({
                 "action": "error",
                 "message": "Faild to parse Json"
@@ -341,6 +365,7 @@ def main() -> None:
     """
     Run all needed services
     """
+    # pylint: disable-next=redefined-outer-name
     logger = setup_logging()
 
     if which(FFMPEG_PATH) is None:
@@ -351,13 +376,17 @@ def main() -> None:
 
     port = int(getenv("PORT", "5000"))
     host = getenv("HOST", "0.0.0.0")
-    trusted_proxies = getenv("TRUSTED_PROXIES")
-    fast = False if getenv("NO_FAST") else True
 
+    # pylint: disable-next=redefined-outer-name
+    trusted_proxies = getenv("TRUSTED_PROXIES")
+    fast = not getenv("NO_FAST")
+
+    # pylint: disable-next=redefined-outer-name
     proxies = None
 
     if trusted_proxies is not None:
         proxies = []
+        # pylint: disable-next=redefined-outer-name
         for proxy in trusted_proxies.split(","):
             proxies.append(proxy)
 

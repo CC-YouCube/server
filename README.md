@@ -16,6 +16,7 @@ Moor Information about the servers can be seen on the [doc](https://youcube.made
 - [Python 3.7+](https://www.python.org/downloads/)
   - [sanic](https://sanic.dev/)
   - [yt-dlp](https://pypi.org/project/yt-dlp/)
+  - [ujson](https://pypi.org/project/ujson) (Optional)
 
 You can install the required packages with [pip](https://pip.pypa.io/en/stable/installation/) by running:
 

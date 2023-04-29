@@ -20,7 +20,7 @@ RUN set -eux; \
     ./configure; \
     make
 
-FROM ghcr.io/commandcracker/alpine-pypy3.9-pip:3.17.1-pypy-7.3.11-pip-22.3.1 AS builder
+FROM ghcr.io/commandcracker/alpine-pypy3.9-pip:3.17.3-pypy-7.3.11-pip-23.1.2 AS builder
 
 COPY requirements.txt .
 COPY youcube ./youcube
@@ -32,7 +32,7 @@ RUN set -eux; \
     python3 compile.py; \
     pip uninstall pip -y
 
-FROM alpine:3.17.1
+FROM alpine:3.17.3
 
 WORKDIR /opt/server
 
@@ -58,7 +58,9 @@ ENV \
     # Use ffmpeg libs
     LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64 \
     # yt-dlp cache dir
-    XDG_CACHE_HOME="/opt/server/.yt-dlp-cache"
+    XDG_CACHE_HOME="/opt/server/.yt-dlp-cache" \
+    # FIXME: Add UVLOOP support for alpine pypy
+    SANIC_NO_UVLOOP=true
 
 USER 1000
 

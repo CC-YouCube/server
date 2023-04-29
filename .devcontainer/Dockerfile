@@ -1,32 +1,40 @@
-# TODO: change from ffmpeg 5.1+ to yt-dlp/FFmpeg
-FROM jrottenberg/ffmpeg:5.1-alpine as ffmpeg
+FROM ghcr.io/commandcracker/ffmpeg:latest AS ffmpeg
 
-FROM alpine:3.16 as sanjuuni
+FROM ffmpeg as sanjuuni
 
-# TODO: use the same ffmpeg for sanjuuni
-RUN set -x \
-    && apk add --no-cache --update git g++ zlib-dev poco-dev make ffmpeg-dev \
-    && git clone https://github.com/MCJack123/sanjuuni.git
+ENV SANJUUNI_VERSION=0.4
+
+ARG SANJUUNI_SHA512SUM="952a6c608d167f37faad53ee7f2e0de8090a02bf73b6455fae7c6b6f648dd6a188e7749fe26caeee85126b2a38d7391389c19afb0100e9962dc551188b9de6ae *sanjuuni.tar.gz"
+
+RUN set -eux; \
+    apk add --no-cache --update opencl-dev g++ zlib-dev poco-dev make; \
+    wget --output-document=sanjuuni.tar.gz https://github.com/MCJack123/sanjuuni/archive/${SANJUUNI_VERSION}.tar.gz; \
+    echo "${SANJUUNI_SHA512SUM}" | sha512sum -c -; \
+    mkdir --parents sanjuuni; \
+    tar --extract --directory sanjuuni --strip-components=1 --file=sanjuuni.tar.gz; \
+    rm sanjuuni.tar.gz;
 
 WORKDIR /sanjuuni
 
-RUN set -x \
-    && ./configure \
-    && make
+RUN set -eux; \
+    ./configure; \
+    make
 
-FROM mcr.microsoft.com/vscode/devcontainers/base:alpine-3.16
+FROM mcr.microsoft.com/vscode/devcontainers/base:alpine-3.17
 
-RUN set -x \
-    && apk add --no-cache --update python3 py3-pip gcc libc-dev \
+RUN set -eux; \
+    apk add --no-cache --update \
+    # python
+    python3 py3-pip gcc libc-dev \
     # ffmpeg requirements
     libgcc libstdc++ ca-certificates libcrypto1.1 libssl1.1 libgomp expat \
     # sanjuuni requirements
-    poco \
+    poco opencl \
     # utils
-    make \
-    && pip install --no-cache-dir --upgrade pip \
+    make; \
+    pip install --no-cache-dir --upgrade pip; \
     # python-is-python3
-    && ln -sf python3 /usr/bin/python
+    ln -sf python3 /usr/bin/python
 
 # add ffmpeg
 COPY --from=ffmpeg /usr/local /usr/local

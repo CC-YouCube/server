@@ -13,7 +13,11 @@ pyspelling:
 	pyspelling
 
 cleanup:
+ifeq ($(OS), Windows_NT)
+	del /s /q src\data src\__pycache__
+else
 	rm src/data src/__pycache__ -Rv || true
+endif
 
 install-pylint:
 	pip install pylint
