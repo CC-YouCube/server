@@ -15,11 +15,12 @@ from os.path import join, dirname, abspath
 from yc_logging import YTDLPLogger, logger, NO_COLOR
 from yc_magic import run_with_live_output
 from yc_colours import Foreground, RESET
+from yc_spotify import SpotifyURLProcessor
 from yc_utils import (
     remove_ansi_escape_codes,
     remove_whitespace,
     cap_width_and_height,
-    fix_data_fodler,
+    create_data_folder_if_not_present,
     is_audio_already_downloaded,
     is_video_already_downloaded,
     get_audio_name,
@@ -39,13 +40,13 @@ from sanic import Websocket
 # pylint: disable=pointless-string-statement
 # pylint: disable=fixme
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-branches
 
 DATA_FOLDER = join(dirname(abspath(__file__)), "data")
 FFMPEG_PATH = getenv("FFMPEG_PATH", "ffmpeg")
 SANJUUNI_PATH = getenv("SANJUUNI_PATH", "sanjuuni")
 DISABLE_OPENCL = bool(getenv("DISABLE_OPENCL"))
-
-# pylint: disable=too-many-arguments
 
 
 def download_video(
@@ -93,14 +94,11 @@ def download_video(
     )
 
     if returncode != 0:
-        logger.warning("%sSanjuuni exited with", returncode)
+        logger.warning("Sanjuuni exited with %s", returncode)
         run_coroutine_threadsafe(resp.send(dumps({
             "action": "error",
             "message": "Faild to convert video!"
         })), loop)
-
-
-# pylint: enable=too-many-arguments
 
 
 def download_audio(temp_dir: str, media_id: str, resp: Websocket, loop):
@@ -134,17 +132,30 @@ def download_audio(temp_dir: str, media_id: str, resp: Websocket, loop):
     )
 
     if returncode != 0:
-        logger.warning("%sFFmpeg exited with", returncode)
+        logger.warning("FFmpeg exited with %s", returncode)
         run_coroutine_threadsafe(resp.send(dumps({
             "action": "error",
             "message": "Faild to convert audio!"
         })), loop)
 
 
-def download(url: str, resp: Websocket, loop, width: int, height: int) -> str:
+def download(
+    url: str,
+    resp: Websocket,
+    loop,
+    width: int,
+    height: int,
+    spotify_url_processor: SpotifyURLProcessor
+) -> str:
     """
     Downloads and converts the media from the give URL
     """
+
+    is_video = width is not None and height is not None
+
+    # cap height and width
+    if width and height:
+        width, height = cap_width_and_height(width, height)
 
     def my_hook(info):
         """https://github.com/yt-dlp/yt-dlp#adding-logger-and-progress-hook"""
@@ -152,20 +163,22 @@ def download(url: str, resp: Websocket, loop, width: int, height: int) -> str:
             run_coroutine_threadsafe(resp.send(dumps({
                 "action": "status",
                 "message": remove_ansi_escape_codes(
-                    # pylint: disable-next=line-too-long
-                    f"download {remove_whitespace(info.get('_percent_str'))} ETA {info.get('_eta_str')}"
+                    f"download {remove_whitespace(info.get('_percent_str'))} "
+                    f"ETA {info.get('_eta_str')}"
                 )
             })), loop)
 
     with TemporaryDirectory(prefix="youcube-") as temp_dir:
         yt_dl_options = {
-            "format": "mp4",
+            "format":
+                "worst[ext=mp4]/worst" if is_video else
+                "worstaudio/worst",
             "outtmpl": join(temp_dir, "%(id)s.%(ext)s"),
             "default_search": "auto",
             "restrictfilenames": True,
             "extract_flat": "in_playlist",
             "progress_hooks": [my_hook],
-            'logger': YTDLPLogger(),
+            "logger": YTDLPLogger()
         }
 
         yt_dl = YoutubeDL(yt_dl_options)
@@ -175,14 +188,28 @@ def download(url: str, resp: Websocket, loop, width: int, height: int) -> str:
             "message": "Getting resource information ..."
         })), loop)
 
+        playlist_videos = []
+
+        if spotify_url_processor:
+            # Spotify FIXME: The first media key is sometimes duplicated
+            processed_url = spotify_url_processor.auto(url)
+            if processed_url:
+                if isinstance(processed_url, list):
+                    url = spotify_url_processor.auto(processed_url[0])
+                    processed_url.pop(0)
+                    playlist_videos = processed_url
+                else:
+                    url = processed_url
+
         data = yt_dl.extract_info(url, download=False)
+
+        if data.get("extractor") == "generic":
+            data["id"] = 'g' + data.get("webpage_url_domain") + data.get("id")
 
         """
         If the data is a playlist, we need to get the first video and return it,
         also, we need to grep all video in the playlist to provide support.
         """
-        playlist_videos = []
-
         if data.get("_type") == "playlist":
             for video in data.get("entries"):
                 playlist_videos.append(video.get("id"))
@@ -196,7 +223,10 @@ def download(url: str, resp: Websocket, loop, width: int, height: int) -> str:
         the video is extracted flat,
         so we need to get missing information by running the extractor again.
         """
-        if data.get("view_count") is None or data.get("like_count") is None:
+        if data.get("extractor") == "youtube" and (
+            data.get("view_count") is None or
+            data.get("like_count") is None
+        ):
             data = yt_dl.extract_info(data.get("id"), download=False)
 
         media_id = data.get("id")
@@ -207,32 +237,25 @@ def download(url: str, resp: Websocket, loop, width: int, height: int) -> str:
                 "message": "Livestreams are not supported"
             }
 
-        if width is None or height is None:
-            video = False
-        else:
-            video = True
-            # cap height and width
-            width, height = cap_width_and_height(width, height)
-
-        fix_data_fodler()
+        create_data_folder_if_not_present()
 
         audio_downloaded = is_audio_already_downloaded(media_id)
         video_downloaded = is_video_already_downloaded(media_id, width, height)
 
-        if not audio_downloaded or (not video_downloaded and video):
+        if not audio_downloaded or (not video_downloaded and is_video):
             run_coroutine_threadsafe(resp.send(dumps({
                 "action": "status",
                 "message": "Downloading resource ..."
             })), loop)
 
-            yt_dl.process_video_result(data, download=True)
+            yt_dl.process_ie_result(data, download=True)
 
         # TODO: Thread audio & video download
 
         if not audio_downloaded:
             download_audio(temp_dir, media_id, resp, loop)
 
-        if not video_downloaded and video:
+        if not video_downloaded and is_video:
             download_video(temp_dir, media_id, resp, loop, width, height)
 
     out = {

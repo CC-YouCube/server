@@ -81,7 +81,7 @@ def get_audio_path(media_id: str) -> str:
     return join(DATA_FOLDER, get_audio_name(media_id))
 
 
-def fix_data_fodler():
+def create_data_folder_if_not_present():
     """Creates the data folder if it does not exist"""
     if not exists(DATA_FOLDER):
         mkdir(DATA_FOLDER)
@@ -98,7 +98,7 @@ def is_video_already_downloaded(media_id: str, width: int, height: int) -> bool:
 
 
 # Only compile "allowed_characters" once
-allowed_characters = re_compile('^[a-zA-Z0-9-_]*$')
+allowed_characters = re_compile('^[a-zA-Z0-9-._]*$')
 
 
 def is_save(string: str) -> bool:

@@ -1,10 +1,21 @@
-UVLOOP
+# Python Libraries/Frameworks
+uvloop
 pypy
-Responsing
-Websocket
 sanic
+asyncio
+ThreadSaveAsyncioEventWithReturnValue
+pylint
+Popen
+ffmpeg
+subprocess
+utils
+
+# Web Development
+websocket
 YouCube
-YC
+Spotify
+
+# Programming Keywords
 untrusted
 usr
 utf
@@ -14,17 +25,7 @@ FIXME
 api
 TODO
 async
-ThreadSaveAsyncioEventWithReturnValue
-asyncio
 fixme
-pylint
-Popen
-dl
-ffmpeg
-py
-subprocess
-utils
-yt
 bestaudio
 worstaudio
 worstvideo
@@ -32,7 +33,6 @@ vid
 ws
 formatter
 msg
-youtube
 init
 docstring
 chunkindex
@@ -45,16 +45,16 @@ Ansi
 subprocesses
 Whitespace
 pyc
-# formats
 dfpwm
-# linting
 SpellCheckingInspection
 noinspection
-# functions
 getLogger
 localtrace
 isinstance
-# Urls
+responsing
+toplevel
+
+# URLs
 https
 wikipedia
 stackoverflow
@@ -62,3 +62,9 @@ github
 dlp
 geeksforgeeks
 www
+
+# Video Streaming
+yc
+yt
+dl
+youtube

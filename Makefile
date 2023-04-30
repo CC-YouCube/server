@@ -1,7 +1,7 @@
 #!make
 
 run:
-	python src/youcube
+	python src/youcube/youcube.py
 
 docker-build:
 	docker build -t youcube:latest src/.

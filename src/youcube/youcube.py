@@ -43,6 +43,8 @@ from sanic import (
 )
 from sanic.response import text
 from sanic.handlers import ErrorHandler
+from spotipy import SpotifyClientCredentials, MemoryCacheHandler
+from spotipy.client import Spotify
 
 # local modules
 from yc_utils import (
@@ -55,6 +57,7 @@ from yc_colours import Foreground, RESET
 from yc_download import download, DATA_FOLDER, FFMPEG_PATH, SANJUUNI_PATH
 from yc_magic import run_function_in_thread_from_async_function
 from yc_logging import setup_logging, NO_COLOR
+from yc_spotify import SpotifyURLProcessor
 
 VERSION = "0.0.0-poc.1.0.2"
 API_VERSION = "0.0.0-poc.1.0.0"  # https://commandcracker.github.io/YouCube/
@@ -165,6 +168,36 @@ def assert_resp(
     return None
 
 
+logger = setup_logging()
+
+# pylint: disable=duplicate-code
+spotify_client_id = getenv("SPOTIPY_CLIENT_ID")
+spotify_client_secret = getenv("SPOTIPY_CLIENT_SECRET")
+# pylint: disable-next=invalid-name
+spotipy = None
+
+# TODO: only print once
+
+if spotify_client_id and spotify_client_secret:
+    logger.info("Spotipy Enabled")
+    spotipy = Spotify(
+        auth_manager=SpotifyClientCredentials(
+            client_id=spotify_client_id,
+            client_secret=spotify_client_secret,
+            cache_handler=MemoryCacheHandler()
+        )
+    )
+else:
+    logger.info("Spotipy Disabled")
+
+# pylint: disable-next=invalid-name
+spotify_url_processor = None
+if spotipy:
+    spotify_url_processor = SpotifyURLProcessor(spotipy)
+
+# pylint: enable=duplicate-code
+
+
 class Actions:
     """
     Default set of actions
@@ -186,7 +219,8 @@ class Actions:
             resp,
             loop,
             message.get("width"),
-            message.get("height")
+            message.get("height"),
+            spotify_url_processor
         )
 
     @staticmethod
@@ -211,7 +245,7 @@ class Actions:
                 "action": "chunk",
                 "chunk": b64encode(chunk).decode("ascii")
             }
-
+        logger.warning("User tried to use special Characters")
         return {
             "action": "error",
             "message": "You dare not use special Characters"
@@ -324,12 +358,20 @@ if trusted_proxies is not None:
     for proxy in trusted_proxies.split(","):
         proxies.append(proxy)
 
+# TODO: only print once
+
+if which(FFMPEG_PATH) is None:
+    logger.warning("FFmpeg not found.")
+
+if which(SANJUUNI_PATH) is None:
+    logger.warning("Sanjuuni not found.")
+
 
 @app.websocket("/")
 # pylint: disable-next=invalid-name
 async def wshandler(request: Request, ws: Websocket):
     """Handels web-socket requests"""
-    client_ip = get_client_ip(request, trusted_proxies)
+    client_ip = get_client_ip(request, proxies)
     if NO_COLOR:
         prefix = f"[{client_ip}] "
     else:
@@ -365,30 +407,9 @@ def main() -> None:
     """
     Run all needed services
     """
-    # pylint: disable-next=redefined-outer-name
-    logger = setup_logging()
-
-    if which(FFMPEG_PATH) is None:
-        logger.warning("FFmpeg not found.")
-
-    if which(SANJUUNI_PATH) is None:
-        logger.warning("Sanjuuni not found.")
-
     port = int(getenv("PORT", "5000"))
     host = getenv("HOST", "0.0.0.0")
-
-    # pylint: disable-next=redefined-outer-name
-    trusted_proxies = getenv("TRUSTED_PROXIES")
     fast = not getenv("NO_FAST")
-
-    # pylint: disable-next=redefined-outer-name
-    proxies = None
-
-    if trusted_proxies is not None:
-        proxies = []
-        # pylint: disable-next=redefined-outer-name
-        for proxy in trusted_proxies.split(","):
-            proxies.append(proxy)
 
     app.run(host=host, port=port, fast=fast)
 

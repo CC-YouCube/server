@@ -2,3 +2,4 @@
 *.32vid
 dictionary.dic
 *.pyc
+*.env
