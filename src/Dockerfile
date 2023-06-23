@@ -18,8 +18,6 @@ RUN set -eux; \
 
 WORKDIR /sanjuuni
 
-ADD disable_oppncl.patch ./disable_oppncl.patch
-
 RUN set -eux; \
     ./configure; \
     make
