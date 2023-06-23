@@ -6,6 +6,8 @@ ENV SANJUUNI_VERSION=0.4
 
 ARG SANJUUNI_SHA512SUM="952a6c608d167f37faad53ee7f2e0de8090a02bf73b6455fae7c6b6f648dd6a188e7749fe26caeee85126b2a38d7391389c19afb0100e9962dc551188b9de6ae *sanjuuni.tar.gz"
 
+# TODO: Disable opencl
+
 RUN set -eux; \
     apk add --no-cache --update opencl-dev g++ zlib-dev poco-dev make; \
     wget --output-document=sanjuuni.tar.gz https://github.com/MCJack123/sanjuuni/archive/${SANJUUNI_VERSION}.tar.gz; \
@@ -16,11 +18,13 @@ RUN set -eux; \
 
 WORKDIR /sanjuuni
 
+ADD disable_oppncl.patch ./disable_oppncl.patch
+
 RUN set -eux; \
     ./configure; \
     make
 
-FROM ghcr.io/commandcracker/alpine-pypy3.9-pip:3.17.3-pypy-7.3.11-pip-23.1.2 AS builder
+FROM ghcr.io/commandcracker/alpine-pypy3.10-pip:3.18.2-pypy-7.3.12-pip-23.1.2 AS builder
 
 COPY requirements.txt .
 COPY youcube ./youcube
@@ -28,11 +32,11 @@ COPY compile.py .
 
 RUN set -eux; \
     apk add --no-cache --update build-base; \
-    pip install --no-cache-dir --use-pep517 -U setuptools -r requirements.txt; \
+    pip install --no-cache-dir -U setuptools -r requirements.txt; \
     python3 compile.py; \
     pip uninstall pip -y
 
-FROM alpine:3.17.3
+FROM alpine:3.18.2
 
 WORKDIR /opt/server
 
