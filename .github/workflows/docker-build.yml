@@ -1,24 +1,30 @@
 name: Build Docker image
 
 on:
-  workflow_dispatch:
-  push:
-    branches-ignore: [main]
-    paths:
-      - "src/**"
-  pull_request:
-    paths:
-      - "src/**"
+    workflow_dispatch:
+    push:
+        branches-ignore: [main]
+        paths:
+            - "src/**"
+    pull_request:
+        paths:
+            - "src/**"
 
 jobs:
-  build-image:
-    runs-on: ubuntu-latest
+    build-image:
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v3
+        steps:
+            - name: Checkout 🛎️
+              uses: actions/checkout@v3
 
-      - name: Build image 🔨
-        uses: docker/build-push-action@v4
-        with:
-          context: src
+            - name: Build alpine image 🔨
+              uses: docker/build-push-action@v4
+              with:
+                  context: src
+
+            - name: Build nvidia image 🔨
+              uses: docker/build-push-action@v4
+              with:
+                  file: src/Dockerfile.nvidia
+                  context: src

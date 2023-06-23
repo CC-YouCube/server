@@ -6,6 +6,9 @@ run:
 docker-build:
 	docker build -t youcube:latest src/.
 
+docker-build-nvidia:
+	docker build -t youcube:nvidia src/. --file src/Dockerfile.nvidia
+
 pylint:
 	pylint src/youcube/*.py
 

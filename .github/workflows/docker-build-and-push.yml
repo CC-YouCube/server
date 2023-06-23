@@ -1,44 +1,53 @@
 name: Build and publish Docker image
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "src/**"
+    workflow_dispatch:
+    push:
+        branches: [main]
+        paths:
+            - "src/**"
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+    REGISTRY: ghcr.io
+    IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push-image:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    build-and-push-image:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            packages: write
 
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v3
+        steps:
+            - name: Checkout 🛎️
+              uses: actions/checkout@v3
 
-      - name: Login to container registry 🔐
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+            - name: Login to container registry 🔐
+              uses: docker/login-action@v2
+              with:
+                  registry: ${{ env.REGISTRY }}
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata 🏷️
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+            - name: Extract metadata 🏷️
+              id: meta
+              uses: docker/metadata-action@v4
+              with:
+                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: 🔨 Build and Publish 🚀
-        uses: docker/build-push-action@v3
-        with:
-          context: src
-          push: true
-          tags: ghcr.io/cc-youcube/youcube:latest
-          labels: ${{ steps.meta.outputs.labels }}
+            - name: 🔨 Build and Publish alpine 🚀
+              uses: docker/build-push-action@v3
+              with:
+                  context: src
+                  push: true
+                  tags: ghcr.io/cc-youcube/youcube:latest
+                  labels: ${{ steps.meta.outputs.labels }}
+
+            - name: 🔨 Build and Publish nvidia 🚀
+              uses: docker/build-push-action@v3
+              with:
+                  file: src/Dockerfile.nvidia
+                  context: src
+                  push: true
+                  tags: ghcr.io/cc-youcube/youcube:nvidia
+                  labels: ${{ steps.meta.outputs.labels }}
