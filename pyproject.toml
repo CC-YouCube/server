@@ -1,2 +1,41 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "youcube-server"
+version = "1.0.0"
+authors = [
+    {name = "Commandcracker"},
+]
+description = "A server which provides a WebSocket API for YouCube clients"
+urls = {
+    Homepage = "https://youcube.madefor.cc"
+    Repository = "https://github.com/CC-YouCube/server"
+    Documentation = "https://youcube.madefor.cc/guides/server/installation/"
+}
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["youtube", "youcube", "computercraft", "minecraft"]
+license = {text = "GPL-3.0"}
+classifiers = [
+	"Programming Language :: Python :: 3",
+	"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+	"Natural Language :: English",
+	"Topic :: Multimedia :: Video",
+	"Topic :: Multimedia :: Sound/Audio :: Players",
+]
+# Required for pulling dependencies from requirements.txt
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+# Pull dependencies from requirements.txt
+dependencies = {file = ["src/requirements.txt"]}
+
+[tool.setuptools.packages.find]
+where = ["src"]  # list of folders that contain the packages (["."] by default)
+include = ["youcube*"]  # package names should match these glob patterns (["*"] by default)
+
 [tool.autopep8]
 ignore = "E701"
+
