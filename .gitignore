@@ -3,3 +3,5 @@
 dictionary.dic
 *.pyc
 *.env
+*.egg-info
+dist
