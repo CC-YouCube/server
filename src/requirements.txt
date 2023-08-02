@@ -1,5 +1,5 @@
-sanic~=23.3.0
+sanic~=23.6.0
 #uvloop~=0.17.0; platform_system != "Windows"
-yt-dlp~=2023.6.22
+yt-dlp~=2023.7.6
 ujson~=5.8.0
 spotipy~=2.23.0
