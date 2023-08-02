@@ -9,11 +9,6 @@ authors = [
     {name = "Commandcracker"},
 ]
 description = "A server which provides a WebSocket API for YouCube clients"
-urls = {
-    Homepage = "https://youcube.madefor.cc"
-    Repository = "https://github.com/CC-YouCube/server"
-    Documentation = "https://youcube.madefor.cc/guides/server/installation/"
-}
 readme = "README.md"
 requires-python = ">=3.7"
 keywords = ["youtube", "youcube", "computercraft", "minecraft"]
@@ -27,6 +22,11 @@ classifiers = [
 ]
 # Required for pulling dependencies from requirements.txt
 dynamic = ["dependencies"]
+
+[project.urls]
+Homepage = "https://youcube.madefor.cc"
+Repository = "https://github.com/CC-YouCube/server"
+Documentation = "https://youcube.madefor.cc/guides/server/installation/"
 
 [tool.setuptools.dynamic]
 # Pull dependencies from requirements.txt
