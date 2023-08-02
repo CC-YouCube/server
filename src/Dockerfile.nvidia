@@ -7,6 +7,7 @@ ENV SANJUUNI_VERSION=0.4
 ARG SANJUUNI_SHA512SUM="952a6c608d167f37faad53ee7f2e0de8090a02bf73b6455fae7c6b6f648dd6a188e7749fe26caeee85126b2a38d7391389c19afb0100e9962dc551188b9de6ae *sanjuuni.tar.gz"
 
 RUN set -eux; \
+    apt-get update; \
     apt-get install \
     ocl-icd-opencl-dev \
     wget \
@@ -32,6 +33,7 @@ COPY requirements.txt .
 COPY youcube /youcube
 
 RUN set -eux; \
+    apt-get update; \
     apt-get install \
     libpoco-dev \
     python3-pip \
