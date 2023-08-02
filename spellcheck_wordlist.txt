@@ -16,6 +16,7 @@ YouCube
 Spotify
 
 # Programming Keywords
+env
 untrusted
 usr
 utf
