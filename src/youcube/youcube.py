@@ -43,6 +43,7 @@ from sanic import (
 )
 from sanic.response import text
 from sanic.handlers import ErrorHandler
+from sanic.exceptions import SanicException
 from spotipy import SpotifyClientCredentials, MemoryCacheHandler
 from spotipy.client import Spotify
 
@@ -225,6 +226,7 @@ class Actions:
 
     @staticmethod
     async def get_chunk(message: dict, _unused):
+        # TODO: clear cache
         # get "chunkindex"
         chunkindex = message.get("chunkindex")
         if error := assert_resp("chunkindex", chunkindex, int): return error
@@ -316,17 +318,15 @@ class CustomErrorHandler(ErrorHandler):
     Error handler for sanic
     """
 
-    def default(self, request: Request, exception: Exception):
+    def default(self, request: Request, exception: Union[SanicException, Exception]):
         ''' handles errors that have no error handlers assigned '''
-        # You custom error handling logic...
 
-        msg = \
-            "Failed to open a WebSocket connection." + \
-            "\nSee server log for more information.\n"
-        if request.method == "GET" and request.path == "/" and str(exception) == msg:
+        if isinstance(exception, SanicException) and exception.status_code == 426:
+            # TODO: Respond with nice html that tells the user how to install YC
             return text(
-                "You cannot access a WebSocket server directly. "
-                "You need a WebSocket client."
+                "You cannot access a YouCube server directly. "
+                "You need the YouCube client. "
+                "See https://youcube.madefor.cc/guides/client/installation/"
             )
 
         return super().default(request, exception)
