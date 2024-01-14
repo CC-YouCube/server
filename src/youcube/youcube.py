@@ -346,7 +346,6 @@ actions = {}
 for method in dir(Actions):
     if not method.startswith('__'):
         actions[method] = getattr(Actions, method)
-logger = setup_logging()
 
 trusted_proxies = getenv("TRUSTED_PROXIES")
 
