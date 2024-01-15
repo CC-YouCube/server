@@ -17,7 +17,8 @@ from spotipy import SpotifyClientCredentials, MemoryCacheHandler
 from spotipy.client import Spotify
 
 # https://github.com/spotipy-dev/spotipy/issues/1071
-_regex_spotify_url = r'^(http[s]?:\/\/)?open.spotify.com\/.*(?P<type>track|artist|album|playlist|show|episode|user)\/(?P<id>[0-9A-Za-z]+)(\?.*)?$'
+# pylint: disable-next=line-too-long
+REGEX_SPOTIFY_URL = r'^(http[s]?:\/\/)?open.spotify.com\/.*(?P<type>track|artist|album|playlist|show|episode|user)\/(?P<id>[0-9A-Za-z]+)(\?.*)?$'
 
 # pylint: disable=missing-function-docstring
 # pylint: disable=missing-class-docstring
@@ -114,7 +115,7 @@ class SpotifyURLProcessor:
         # pylint: disable=protected-access
         for match in [
             re_match(Spotify._regex_spotify_uri, url),
-            re_match(_regex_spotify_url, url)
+            re_match(REGEX_SPOTIFY_URL, url)
         ]:
             # pylint: enable=protected-access
             if match:

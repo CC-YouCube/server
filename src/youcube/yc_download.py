@@ -12,7 +12,6 @@ from os import listdir, getenv
 from os.path import join, dirname, abspath
 
 # Local modules
-#TODO: change sanic logging format
 from yc_logging import YTDLPLogger, logger, NO_COLOR
 from yc_magic import run_with_live_output
 from yc_colours import Foreground, RESET

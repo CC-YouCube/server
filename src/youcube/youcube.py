@@ -87,6 +87,7 @@ FRAMES_AT_ONCE = 10
 # pylint: disable=multiple-statements
 
 logger = setup_logging()
+#TODO: change sanic logging format
 
 
 def get_vid(vid_file: str, tracker: int) -> List[str]:
@@ -210,7 +211,7 @@ class Actions:
                 DATA_FOLDER,
                 file_name
             )
-            
+
             request.app.shared_ctx.data[file_name] = datetime.now()
             chunk = get_chunk(file, chunkindex)
 
@@ -251,7 +252,7 @@ class Actions:
                 DATA_FOLDER,
                 file_name
             )
-            
+
             request.app.shared_ctx.data[file_name] = datetime.now()
 
             return {
@@ -327,6 +328,10 @@ DATA_CACHE_CLEANUP_AFTER = int(getenv("DATA_CACHE_CLEANUP_AFTER", "3600"))
 
 
 def data_cache_cleaner(data: dict):
+    """
+    Checks for outdated cache entries every DATA_CACHE_CLEANUP_INTERVAL (default 300) Seconds and 
+    deletes them if they have not been used for DATA_CACHE_CLEANUP_AFTER (default 3600) Seconds.
+    """
     try:
         while True:
             sleep(DATA_CACHE_CLEANUP_INTERVAL)
@@ -335,33 +340,39 @@ def data_cache_cleaner(data: dict):
                     file_path = join(DATA_FOLDER, file_name)
                     if exists(file_path):
                         remove(file_path)
-                        logger.debug(f'Deleted "{file_name}"')
+                        logger.debug('Deleted "%s"', file_name)
                     data.pop(file_name)
 
     except KeyboardInterrupt:
         pass
 
 
+# pylint: disable=redefined-outer-name
 @app.main_process_ready
 async def ready(app: Sanic, _):
+    """See https://sanic.dev/en/guide/basics/listeners.html"""
     if DATA_CACHE_CLEANUP_INTERVAL > 0 and DATA_CACHE_CLEANUP_AFTER > 0:
         app.manager.manage("Data-Cache-Cleaner", data_cache_cleaner, {"data": app.shared_ctx.data})
 
+
 @app.main_process_start
 async def main_start(app: Sanic):
-    
+    """See https://sanic.dev/en/guide/basics/listeners.html"""
     app.shared_ctx.data = Manager().dict()
-    
+
     if which(FFMPEG_PATH) is None:
         logger.warning("FFmpeg not found.")
 
     if which(SANJUUNI_PATH) is None:
         logger.warning("Sanjuuni not found.")
-    
+
     if spotipy:
         logger.info("Spotipy Enabled")
     else:
         logger.info("Spotipy Disabled")
+
+
+# pylint: enable=redefined-outer-name
 
 
 @app.websocket("/")
