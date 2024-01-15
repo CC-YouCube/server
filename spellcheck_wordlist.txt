@@ -9,12 +9,14 @@ Popen
 ffmpeg
 subprocess
 utils
+spotipy
 
 # Web Development
 websocket
 YouCube
 Spotify
 html
+dev
 
 # Programming Keywords
 env
