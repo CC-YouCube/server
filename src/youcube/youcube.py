@@ -6,8 +6,10 @@ YouCube Server
 """
 
 # built-in modules
-from os.path import join
-from os import getenv
+from datetime import datetime
+from time import sleep
+from os.path import join, exists
+from os import getenv, remove
 from asyncio import get_event_loop
 from typing import (
     Union,
@@ -18,6 +20,7 @@ from typing import (
 )
 from base64 import b64encode
 from shutil import which
+from multiprocessing import Manager
 
 try:
     from ujson import (
@@ -83,6 +86,8 @@ FRAMES_AT_ONCE = 10
 # pylint: disable=fixme
 # pylint: disable=multiple-statements
 
+logger = setup_logging()
+
 
 def get_vid(vid_file: str, tracker: int) -> List[str]:
     """
@@ -108,37 +113,6 @@ def get_chunk(media_file: str, chunkindex: int) -> bytes:
         file.close()
 
     return chunk
-
-
-class UntrustedProxy(Exception):
-    """
-    Occurs when someone connects through an untrusted proxy
-    """
-
-    def __str__(self) -> str:
-        return "A client is not using a trusted proxy!"
-
-# pylint: disable=redefined-outer-name
-
-
-def get_client_ip(request: Request, trusted_proxies: list) -> str:
-    """
-    Returns the real client IP
-    """
-    peername_host = request.ip
-
-    if trusted_proxies is None:
-        return peername_host
-
-    if peername_host in trusted_proxies:
-        x_forwarded_for = request.headers.get('X-Forwarded-For')
-
-        if x_forwarded_for is not None:
-            x_forwarded_for = x_forwarded_for.split(",")[0]
-
-        return x_forwarded_for or request.headers.get('True-Client-Ip')
-
-    raise UntrustedProxy
 
 # pylint: enable=redefined-outer-name
 
@@ -169,18 +143,13 @@ def assert_resp(
     return None
 
 
-logger = setup_logging()
-
 # pylint: disable=duplicate-code
 spotify_client_id = getenv("SPOTIPY_CLIENT_ID")
 spotify_client_secret = getenv("SPOTIPY_CLIENT_SECRET")
 # pylint: disable-next=invalid-name
 spotipy = None
 
-# TODO: only print once
-
 if spotify_client_id and spotify_client_secret:
-    logger.info("Spotipy Enabled")
     spotipy = Spotify(
         auth_manager=SpotifyClientCredentials(
             client_id=spotify_client_id,
@@ -188,8 +157,6 @@ if spotify_client_id and spotify_client_secret:
             cache_handler=MemoryCacheHandler()
         )
     )
-else:
-    logger.info("Spotipy Disabled")
 
 # pylint: disable-next=invalid-name
 spotify_url_processor = None
@@ -208,13 +175,13 @@ class Actions:
     # pylint: disable=missing-function-docstring
 
     @staticmethod
-    async def request_media(message: dict, resp: Websocket):
+    async def request_media(message: dict, resp: Websocket, request: Request):
         loop = get_event_loop()
         # get "url"
         url = message.get("url")
         if error := assert_resp("url", url, str): return error
         # TODO: assert_resp width and height
-        return await run_function_in_thread_from_async_function(
+        out, files = await run_function_in_thread_from_async_function(
             download,
             url,
             resp,
@@ -223,10 +190,12 @@ class Actions:
             message.get("height"),
             spotify_url_processor
         )
+        for file in files:
+            request.app.shared_ctx.data[file] = datetime.now()
+        return out
 
     @staticmethod
-    async def get_chunk(message: dict, _unused):
-        # TODO: clear cache
+    async def get_chunk(message: dict, _unused, request: Request):
         # get "chunkindex"
         chunkindex = message.get("chunkindex")
         if error := assert_resp("chunkindex", chunkindex, int): return error
@@ -236,11 +205,13 @@ class Actions:
         if error := assert_resp("media_id", media_id, str): return error
 
         if is_save(media_id):
+            file_name = get_audio_name(message.get("id"))
             file = join(
                 DATA_FOLDER,
-                get_audio_name(message.get("id"))
+                file_name
             )
-
+            
+            request.app.shared_ctx.data[file_name] = datetime.now()
             chunk = get_chunk(file, chunkindex)
 
             return {
@@ -254,7 +225,7 @@ class Actions:
         }
 
     @staticmethod
-    async def get_vid(message: dict, _unused):
+    async def get_vid(message: dict, _unused, request: Request):
         # get "line"
         tracker = message.get("tracker")
         if error := assert_resp("tracker", tracker, int): return error
@@ -275,10 +246,13 @@ class Actions:
         width, height = cap_width_and_height(width, height)
 
         if is_save(media_id):
+            file_name = get_video_name(message.get('id'), width, height)
             file = join(
                 DATA_FOLDER,
-                get_video_name(message.get('id'), width, height)
+                file_name
             )
+            
+            request.app.shared_ctx.data[file_name] = datetime.now()
 
             return {
                 "action": "vid",
@@ -347,34 +321,57 @@ for method in dir(Actions):
     if not method.startswith('__'):
         actions[method] = getattr(Actions, method)
 
-trusted_proxies = getenv("TRUSTED_PROXIES")
 
-# pylint: disable-next=invalid-name
-proxies = None
+DATA_CACHE_CLEANUP_INTERVAL = int(getenv("DATA_CACHE_CLEANUP_INTERVAL", "300"))
+DATA_CACHE_CLEANUP_AFTER = int(getenv("DATA_CACHE_CLEANUP_AFTER", "3600"))
 
-if trusted_proxies is not None:
-    proxies = []
-    for proxy in trusted_proxies.split(","):
-        proxies.append(proxy)
 
-# TODO: only print once
+def data_cache_cleaner(data: dict):
+    try:
+        while True:
+            sleep(DATA_CACHE_CLEANUP_INTERVAL)
+            for file_name, last_used in data.items():
+                if (datetime.now() - last_used).total_seconds() > DATA_CACHE_CLEANUP_AFTER:
+                    file_path = join(DATA_FOLDER, file_name)
+                    if exists(file_path):
+                        remove(file_path)
+                        logger.debug(f'Deleted "{file_name}"')
+                    data.pop(file_name)
 
-if which(FFMPEG_PATH) is None:
-    logger.warning("FFmpeg not found.")
+    except KeyboardInterrupt:
+        pass
 
-if which(SANJUUNI_PATH) is None:
-    logger.warning("Sanjuuni not found.")
+
+@app.main_process_ready
+async def ready(app: Sanic, _):
+    if DATA_CACHE_CLEANUP_INTERVAL > 0 and DATA_CACHE_CLEANUP_AFTER > 0:
+        app.manager.manage("Data-Cache-Cleaner", data_cache_cleaner, {"data": app.shared_ctx.data})
+
+@app.main_process_start
+async def main_start(app: Sanic):
+    
+    app.shared_ctx.data = Manager().dict()
+    
+    if which(FFMPEG_PATH) is None:
+        logger.warning("FFmpeg not found.")
+
+    if which(SANJUUNI_PATH) is None:
+        logger.warning("Sanjuuni not found.")
+    
+    if spotipy:
+        logger.info("Spotipy Enabled")
+    else:
+        logger.info("Spotipy Disabled")
 
 
 @app.websocket("/")
 # pylint: disable-next=invalid-name
 async def wshandler(request: Request, ws: Websocket):
     """Handels web-socket requests"""
-    client_ip = get_client_ip(request, proxies)
     if NO_COLOR:
-        prefix = f"[{client_ip}] "
+        prefix = f"[{request.client_ip}] "
     else:
-        prefix = f"{Foreground.BLUE}[{client_ip}]{RESET} "
+        prefix = f"{Foreground.BLUE}[{request.client_ip}]{RESET} "
 
     logger.info("%sConnected!", prefix)
 
@@ -398,7 +395,7 @@ async def wshandler(request: Request, ws: Websocket):
             }))
 
         if message.get("action") in actions:
-            response = await actions[message.get("action")](message, ws)
+            response = await actions[message.get("action")](message, ws, request)
             await ws.send(dumps(response))
 
 

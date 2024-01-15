@@ -12,6 +12,7 @@ from os import listdir, getenv
 from os.path import join, dirname, abspath
 
 # Local modules
+#TODO: change sanic logging format
 from yc_logging import YTDLPLogger, logger, NO_COLOR
 from yc_magic import run_with_live_output
 from yc_colours import Foreground, RESET
@@ -146,7 +147,7 @@ def download(
     width: int,
     height: int,
     spotify_url_processor: SpotifyURLProcessor
-) -> str:
+) -> (dict[str, any], list):
     """
     Downloads and converts the media from the give URL
     """
@@ -168,6 +169,7 @@ def download(
                 )
             })), loop)
 
+    # FIXME: Cleanup on Exception
     with TemporaryDirectory(prefix="youcube-") as temp_dir:
         yt_dl_options = {
             "format":
@@ -277,4 +279,9 @@ def download(
     if len(playlist_videos) > 0:
         out["playlist_videos"] = playlist_videos
 
-    return out
+    files = []
+    files.append(get_audio_name(media_id))
+    if is_video:
+        files.append(get_video_name(media_id, width, height))
+
+    return out, files

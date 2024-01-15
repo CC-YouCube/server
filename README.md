@@ -33,21 +33,24 @@ python src/youcube.py
 
 ## Environment variables
 
-Environment variables you can use to configure the server.
+Environment variables you can use to configure the server:
 
-| Variable                | Default    | Description                                       |
-|-------------------------|------------|---------------------------------------------------|
-| `HOST`                  | `0.0.0.0`  | The host where the web server runs on.            |
-| `PORT`                  | `5000`     | The port where the web server should run on       |
-| `TRUSTED_PROXIES`       |            | Trusted proxies (separated by comma`,`)           |
-| `FFMPEG_PATH`           | `ffmpeg`   | Path to the FFmpeg executable                     |
-| `SANJUUNI_PATH`         | `sanjuuni` | Path to the Sanjuuni executable                   |
-| `NO_COLOR`              | `False`    | Disable colored output                            |
-| `LOGLEVEL`              | `DEBUG`    | Python Log level of the main logger               |
-| `DISABLE_OPENCL`        | `False`    | Disables sanjuuni GPU acceleration                |
-| `NO_FAST`               | `False`    | Disable Sanic worker processes maximization       |
-| `SPOTIPY_CLIENT_ID`     |            | The Client ID from your [spotify application]     |
-| `SPOTIPY_CLIENT_SECRET` |            | The Client Secret from your [spotify application] |
+| Variable                      | Default    | Description                                                                                                        |
+|-------------------------------|------------|--------------------------------------------------------------------------------------------------------------------|
+| `HOST`                        | `0.0.0.0`  | The host where the web server runs on.                                                                             |
+| `PORT`                        | `5000`     | The port where the web server should run on                                                                        |
+| `FFMPEG_PATH`                 | `ffmpeg`   | Path to the FFmpeg executable                                                                                      |
+| `SANJUUNI_PATH`               | `sanjuuni` | Path to the Sanjuuni executable                                                                                    |
+| `NO_COLOR`                    | `False`    | Disable colored output                                                                                             |
+| `LOGLEVEL`                    | `DEBUG`    | Python Log level of the main logger                                                                                |
+| `DISABLE_OPENCL`              | `False`    | Disables sanjuuni GPU acceleration                                                                                 |
+| `NO_FAST`                     | `False`    | Disable Sanic worker processes maximization                                                                        |
+| `SPOTIPY_CLIENT_ID`           |            | The Client ID from your [spotify application]                                                                      |
+| `SPOTIPY_CLIENT_SECRET`       |            | The Client Secret from your [spotify application]                                                                  |
+| `DATA_CACHE_CLEANUP_INTERVAL` | `300`      | Time interval (in seconds) for the data cache cleaner to wait before checking for outdated cache entries.          |
+| `DATA_CACHE_CLEANUP_AFTER`    | `3600`     | Time threshold (in seconds) for considering a cache entry outdated. Cache entries older than this will be removed. |
+
+And [Sanic Builtin values].
 
 ## Docker Compose
 
@@ -76,3 +79,4 @@ services:
 [preview]: .README/preview-server.png
 [Python Version: 3.7+]: https://img.shields.io/badge/Python-3.7+-green?style=for-the-badge&logo=Python&logoColor=white
 [Python Lint Workflow Status]: https://img.shields.io/github/actions/workflow/status/CC-YouCube/server/pylint.yml?branch=main&label=Python%20Lint&logo=github&style=for-the-badge
+[Sanic Builtin values]: https://sanic.dev/en/guide/running/configuration.md#builtin-values
