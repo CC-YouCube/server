@@ -5,20 +5,18 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "youcube-server"
 version = "1.0.0"
-authors = [
-    {name = "Commandcracker"},
-]
+authors = [{ name = "Commandcracker" }]
 description = "A server which provides a WebSocket API for YouCube clients"
 readme = "README.md"
 requires-python = ">=3.7"
 keywords = ["youtube", "youcube", "computercraft", "minecraft"]
-license = {text = "GPL-3.0"}
+license = { text = "GPL-3.0" }
 classifiers = [
-	"Programming Language :: Python :: 3",
-	"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-	"Natural Language :: English",
-	"Topic :: Multimedia :: Video",
-	"Topic :: Multimedia :: Sound/Audio :: Players",
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Natural Language :: English",
+  "Topic :: Multimedia :: Video",
+  "Topic :: Multimedia :: Sound/Audio :: Players",
 ]
 # Required for pulling dependencies from requirements.txt
 dynamic = ["dependencies"]
@@ -30,12 +28,13 @@ Documentation = "https://youcube.madefor.cc/guides/server/installation/"
 
 [tool.setuptools.dynamic]
 # Pull dependencies from requirements.txt
-dependencies = {file = ["src/requirements.txt"]}
+dependencies = { file = ["src/requirements.txt"] }
 
 [tool.setuptools.packages.find]
-where = ["src"]  # list of folders that contain the packages (["."] by default)
-include = ["youcube*"]  # package names should match these glob patterns (["*"] by default)
+where = ["src"] # list of folders that contain the packages (["."] by default)
+include = [
+  "youcube*",
+] # package names should match these glob patterns (["*"] by default)
 
 [tool.autopep8]
 ignore = "E701"
-

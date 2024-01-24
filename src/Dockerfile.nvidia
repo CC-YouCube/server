@@ -6,48 +6,56 @@ ENV SANJUUNI_VERSION=0.4
 
 ARG SANJUUNI_SHA512SUM="952a6c608d167f37faad53ee7f2e0de8090a02bf73b6455fae7c6b6f648dd6a188e7749fe26caeee85126b2a38d7391389c19afb0100e9962dc551188b9de6ae *sanjuuni.tar.gz"
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 RUN set -eux; \
-    apt-get update; \
-    apt-get install \
-    ocl-icd-opencl-dev \
-    wget \
-    clang \
-    make \
-    libpoco-dev -y; \
-    wget --output-document=sanjuuni.tar.gz https://github.com/MCJack123/sanjuuni/archive/${SANJUUNI_VERSION}.tar.gz; \
-    echo "${SANJUUNI_SHA512SUM}" | sha512sum -c -; \
-    mkdir --parents sanjuuni; \
-    tar --extract --directory sanjuuni --strip-components=1 --file=sanjuuni.tar.gz
+  apt-get update; \
+  apt-get install \
+  ocl-icd-opencl-dev=2.2.14-3 \
+  wget=1.21.2-2ubuntu1 \
+  clang=1:14.0-55~exp2 \
+  make=4.3-4.1build1 \
+  libpoco-dev=1.11.0-3 -y --no-install-recommends; \
+  wget --progress=dot:giga --output-document=sanjuuni.tar.gz https://github.com/MCJack123/sanjuuni/archive/${SANJUUNI_VERSION}.tar.gz; \
+  echo "${SANJUUNI_SHA512SUM}" | sha512sum -c -; \
+  mkdir --parents sanjuuni; \
+  tar --extract --directory sanjuuni --strip-components=1 --file=sanjuuni.tar.gz
 
 WORKDIR /sanjuuni
 
 RUN set -eux; \
-    ./configure; \
-    make
+  ./configure; \
+  make
 
 FROM ffmpeg
+
+WORKDIR /youcube
 
 COPY --from=sanjuuni /sanjuuni/sanjuuni /usr/local/bin
 
 COPY requirements.txt .
 COPY youcube /youcube
 
-RUN set -eux; \
-    apt-get update; \
-    apt-get install \
-    libpoco-dev \
-    python3-pip \
-    gnupg \
-    curl -y; \
-    pip install --no-cache-dir -r requirements.txt; \
-    curl -s -L https://nvidia.github.io/nvidia-container-runtime/gpgkey | apt-key add -; \
-    distribution=$(. /etc/os-release;echo $ID$VERSION_ID); \
-    curl -s -L https://nvidia.github.io/nvidia-container-runtime/$distribution/nvidia-container-runtime.list | tee /etc/apt/sources.list.d/nvidia-container-runtime.list; \
-    apt-get update; \
-    apt-get install \
-    nvidia-opencl-dev \
-    nvidia-container-runtime -y
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-WORKDIR /youcube
+# hadolint ignore=SC1091
+RUN set -eux; \
+  apt-get update; \
+  apt-get install \
+  libpoco-dev=1.11.0-3 \
+  python3-pip=22.0.2+dfsg-1 \
+  gnupg=2.2.27-3ubuntu2.1 \
+  libcurl4=7.81.0-1 \
+  curl=7.81.0-1 -y --no-install-recommends; \
+  pip install --no-cache-dir -r requirements.txt; \
+  curl -s -L "https://nvidia.github.io/nvidia-container-runtime/gpgkey" | apt-key add -; \
+  distribution=$(. /etc/os-release;echo "$ID$VERSION_ID"); \
+  curl -s -L "https://nvidia.github.io/nvidia-container-runtime/$distribution/nvidia-container-runtime.list" | tee /etc/apt/sources.list.d/nvidia-container-runtime.list; \
+  apt-get update; \
+  apt-get install \
+  nvidia-opencl-dev=11.5.1-1ubuntu1 \
+  nvidia-container-runtime=3.13.0-1 -y --no-install-recommends; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT ["python3", "youcube.py"]

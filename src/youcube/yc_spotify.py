@@ -5,23 +5,25 @@
 Spotify support module
 """
 
+
 # Built-in modules
+from enum import Enum
 from logging import getLogger
 from os import getenv
-from enum import Enum
 from re import match as re_match
 from typing import Union
 
 # pip modules
-from spotipy import SpotifyClientCredentials, MemoryCacheHandler
+from spotipy import MemoryCacheHandler, SpotifyClientCredentials
 from spotipy.client import Spotify
 
 # https://github.com/spotipy-dev/spotipy/issues/1071
 # pylint: disable-next=line-too-long
-REGEX_SPOTIFY_URL = r'^(http[s]?:\/\/)?open.spotify.com\/.*(?P<type>track|artist|album|playlist|show|episode|user)\/(?P<id>[0-9A-Za-z]+)(\?.*)?$'
+REGEX_SPOTIFY_URL = r"^(http[s]?:\/\/)?open.spotify.com\/.*(?P<type>track|artist|album|playlist|show|episode|user)\/(?P<id>[0-9A-Za-z]+)(\?.*)?$"
 
 # pylint: disable=missing-function-docstring
 # pylint: disable=missing-class-docstring
+
 
 class SpotifyTypes(Enum):
     TRACK = "track"
@@ -75,8 +77,7 @@ class SpotifyURLProcessor:
         return playlist
 
     def spotify_show(self, spotify_id: str) -> list:
-        episodes = self.spotify.show_episodes(
-            spotify_id, market=self.spotify_market)
+        episodes = self.spotify.show_episodes(spotify_id, market=self.spotify_market)
         playlist = []
 
         for track in episodes["items"]:
@@ -109,13 +110,13 @@ class SpotifyURLProcessor:
             SpotifyTypes.ARTIST: self.spotify_artist,
             SpotifyTypes.SHOW: self.spotify_show,
             SpotifyTypes.EPISODE: self.spotify_episode,
-            SpotifyTypes.USER: self.spotify_user
+            SpotifyTypes.USER: self.spotify_user,
         }
 
         # pylint: disable=protected-access
         for match in [
             re_match(Spotify._regex_spotify_uri, url),
-            re_match(REGEX_SPOTIFY_URL, url)
+            re_match(REGEX_SPOTIFY_URL, url),
         ]:
             # pylint: enable=protected-access
             if match:
@@ -143,7 +144,7 @@ def main() -> None:
             auth_manager=SpotifyClientCredentials(
                 client_id=spotify_client_id,
                 client_secret=spotify_client_secret,
-                cache_handler=MemoryCacheHandler()
+                cache_handler=MemoryCacheHandler(),
             )
         )
     else:
@@ -158,16 +159,16 @@ def main() -> None:
         "https://open.spotify.com/episode/0UCTRy5frRHxD6SktX9dbV",
         "https://open.spotify.com/show/5fA3Ze7Ni75iXAEZaEkJIu",
         "https://open.spotify.com/user/besdkg6w64xf0rt713643tgvt",
-        "https://open.spotify.com/playlist/5UrcnHexRYVEprv5DJBPER"
+        "https://open.spotify.com/playlist/5UrcnHexRYVEprv5DJBPER",
     ]
 
     # pylint: disable-next=import-outside-toplevel
     from yc_colours import Foreground
 
     for url in test_urls:
-        print(Foreground.BLUE + url + Foreground.WHITE,
-              spotify_url_processor.auto(url))
+        print(Foreground.BLUE + url + Foreground.WHITE, spotify_url_processor.auto(url))
 
 
 if __name__ == "__main__":
     main()
+

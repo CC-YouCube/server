@@ -36,7 +36,7 @@ python src/youcube.py
 Environment variables you can use to configure the server:
 
 | Variable                      | Default    | Description                                                                                                        |
-|-------------------------------|------------|--------------------------------------------------------------------------------------------------------------------|
+| ----------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------ |
 | `HOST`                        | `0.0.0.0`  | The host where the web server runs on.                                                                             |
 | `PORT`                        | `5000`     | The port where the web server should run on                                                                        |
 | `FFMPEG_PATH`                 | `ffmpeg`   | Path to the FFmpeg executable                                                                                      |

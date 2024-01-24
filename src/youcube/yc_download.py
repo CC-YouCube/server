@@ -6,35 +6,36 @@ Download Functionality of YC
 """
 
 # Built-in modules
-from tempfile import TemporaryDirectory
 from asyncio import run_coroutine_threadsafe
-from os import listdir, getenv
-from os.path import join, dirname, abspath
+from os import getenv, listdir
+from os.path import abspath, dirname, join
+from tempfile import TemporaryDirectory
 
 # Local modules
-from yc_logging import YTDLPLogger, logger, NO_COLOR
+from yc_colours import RESET, Foreground
+from yc_logging import NO_COLOR, YTDLPLogger, logger
 from yc_magic import run_with_live_output
-from yc_colours import Foreground, RESET
 from yc_spotify import SpotifyURLProcessor
 from yc_utils import (
-    remove_ansi_escape_codes,
-    remove_whitespace,
     cap_width_and_height,
     create_data_folder_if_not_present,
+    get_audio_name,
+    get_video_name,
     is_audio_already_downloaded,
     is_video_already_downloaded,
-    get_audio_name,
-    get_video_name
+    remove_ansi_escape_codes,
+    remove_whitespace,
 )
 
+# optional pip modules
 try:
     from ujson import dumps
 except ModuleNotFoundError:
     from json import dumps
 
 # pip modules
-from yt_dlp import YoutubeDL
 from sanic import Websocket
+from yt_dlp import YoutubeDL
 
 # pylint settings
 # pylint: disable=pointless-string-statement
@@ -50,20 +51,17 @@ DISABLE_OPENCL = bool(getenv("DISABLE_OPENCL"))
 
 
 def download_video(
-    temp_dir: str,
-    media_id: str,
-    resp: Websocket,
-    loop,
-    width: int,
-    height: int
+    temp_dir: str, media_id: str, resp: Websocket, loop, width: int, height: int
 ):
     """
     Converts the downloaded video to 32vid
     """
-    run_coroutine_threadsafe(resp.send(dumps({
-        "action": "status",
-        "message": "Converting video to 32vid ..."
-    })), loop)
+    run_coroutine_threadsafe(
+        resp.send(
+            dumps({"action": "status", "message": "Converting video to 32vid ..."})
+        ),
+        loop,
+    )
 
     if NO_COLOR:
         prefix = "[Sanjuuni]"
@@ -72,43 +70,43 @@ def download_video(
 
     def handler(line):
         logger.debug("%s%s", prefix, line)
-        run_coroutine_threadsafe(resp.send(dumps({
-            "action": "status",
-            "message": line
-        })), loop)
+        run_coroutine_threadsafe(
+            resp.send(dumps({"action": "status", "message": line})), loop
+        )
 
     returncode = run_with_live_output(
         [
             SANJUUNI_PATH,
             "--width=" + str(width),
             "--height=" + str(height),
-            "-i", join(temp_dir, listdir(temp_dir)[0]),
+            "-i",
+            join(temp_dir, listdir(temp_dir)[0]),
             "--raw",
-            "-o", join(
-                DATA_FOLDER,
-                get_video_name(media_id, width, height)
-            ),
-            "--disable-opencl" if DISABLE_OPENCL else ""
+            "-o",
+            join(DATA_FOLDER, get_video_name(media_id, width, height)),
+            "--disable-opencl" if DISABLE_OPENCL else "",
         ],
-        handler
+        handler,
     )
 
     if returncode != 0:
         logger.warning("Sanjuuni exited with %s", returncode)
-        run_coroutine_threadsafe(resp.send(dumps({
-            "action": "error",
-            "message": "Faild to convert video!"
-        })), loop)
+        run_coroutine_threadsafe(
+            resp.send(dumps({"action": "error", "message": "Faild to convert video!"})),
+            loop,
+        )
 
 
 def download_audio(temp_dir: str, media_id: str, resp: Websocket, loop):
     """
     Converts the downloaded audio to dfpwm
     """
-    run_coroutine_threadsafe(resp.send(dumps({
-        "action": "status",
-        "message": "Converting audio to dfpwm ..."
-    })), loop)
+    run_coroutine_threadsafe(
+        resp.send(
+            dumps({"action": "status", "message": "Converting audio to dfpwm ..."})
+        ),
+        loop,
+    )
 
     if NO_COLOR:
         prefix = "[FFmpeg]"
@@ -122,21 +120,25 @@ def download_audio(temp_dir: str, media_id: str, resp: Websocket, loop):
     returncode = run_with_live_output(
         [
             FFMPEG_PATH,
-            "-i", join(temp_dir, listdir(temp_dir)[0]),
-            "-f", "dfpwm",
-            "-ar", "48000",
-            "-ac", "1",
-            join(DATA_FOLDER, get_audio_name(media_id))
+            "-i",
+            join(temp_dir, listdir(temp_dir)[0]),
+            "-f",
+            "dfpwm",
+            "-ar",
+            "48000",
+            "-ac",
+            "1",
+            join(DATA_FOLDER, get_audio_name(media_id)),
         ],
-        handler
+        handler,
     )
 
     if returncode != 0:
         logger.warning("FFmpeg exited with %s", returncode)
-        run_coroutine_threadsafe(resp.send(dumps({
-            "action": "error",
-            "message": "Faild to convert audio!"
-        })), loop)
+        run_coroutine_threadsafe(
+            resp.send(dumps({"action": "error", "message": "Faild to convert audio!"})),
+            loop,
+        )
 
 
 def download(
@@ -145,7 +147,7 @@ def download(
     loop,
     width: int,
     height: int,
-    spotify_url_processor: SpotifyURLProcessor
+    spotify_url_processor: SpotifyURLProcessor,
 ) -> (dict[str, any], list):
     """
     Downloads and converts the media from the give URL
@@ -159,35 +161,44 @@ def download(
 
     def my_hook(info):
         """https://github.com/yt-dlp/yt-dlp#adding-logger-and-progress-hook"""
-        if info.get('status') == "downloading":
-            run_coroutine_threadsafe(resp.send(dumps({
-                "action": "status",
-                "message": remove_ansi_escape_codes(
-                    f"download {remove_whitespace(info.get('_percent_str'))} "
-                    f"ETA {info.get('_eta_str')}"
-                )
-            })), loop)
+        if info.get("status") == "downloading":
+            run_coroutine_threadsafe(
+                resp.send(
+                    dumps(
+                        {
+                            "action": "status",
+                            "message": remove_ansi_escape_codes(
+                                f"download {remove_whitespace(info.get('_percent_str'))} "
+                                f"ETA {info.get('_eta_str')}"
+                            ),
+                        }
+                    )
+                ),
+                loop,
+            )
 
     # FIXME: Cleanup on Exception
     with TemporaryDirectory(prefix="youcube-") as temp_dir:
         yt_dl_options = {
-            "format":
-                "worst[ext=mp4]/worst" if is_video else
-                "worstaudio/worst",
+            "format": "worst[ext=mp4]/worst" if is_video else "worstaudio/worst",
             "outtmpl": join(temp_dir, "%(id)s.%(ext)s"),
             "default_search": "auto",
             "restrictfilenames": True,
             "extract_flat": "in_playlist",
             "progress_hooks": [my_hook],
-            "logger": YTDLPLogger()
+            "logger": YTDLPLogger(),
         }
 
         yt_dl = YoutubeDL(yt_dl_options)
 
-        run_coroutine_threadsafe(resp.send(dumps({
-            "action": "status",
-            "message": "Getting resource information ..."
-        })), loop)
+        run_coroutine_threadsafe(
+            resp.send(
+                dumps(
+                    {"action": "status", "message": "Getting resource information ..."}
+                )
+            ),
+            loop,
+        )
 
         playlist_videos = []
 
@@ -205,7 +216,7 @@ def download(
         data = yt_dl.extract_info(url, download=False)
 
         if data.get("extractor") == "generic":
-            data["id"] = 'g' + data.get("webpage_url_domain") + data.get("id")
+            data["id"] = "g" + data.get("webpage_url_domain") + data.get("id")
 
         """
         If the data is a playlist, we need to get the first video and return it,
@@ -225,18 +236,14 @@ def download(
         so we need to get missing information by running the extractor again.
         """
         if data.get("extractor") == "youtube" and (
-            data.get("view_count") is None or
-            data.get("like_count") is None
+            data.get("view_count") is None or data.get("like_count") is None
         ):
             data = yt_dl.extract_info(data.get("id"), download=False)
 
         media_id = data.get("id")
 
         if data.get("is_live"):
-            return {
-                "action": "error",
-                "message": "Livestreams are not supported"
-            }
+            return {"action": "error", "message": "Livestreams are not supported"}
 
         create_data_folder_if_not_present()
 
@@ -244,10 +251,12 @@ def download(
         video_downloaded = is_video_already_downloaded(media_id, width, height)
 
         if not audio_downloaded or (not video_downloaded and is_video):
-            run_coroutine_threadsafe(resp.send(dumps({
-                "action": "status",
-                "message": "Downloading resource ..."
-            })), loop)
+            run_coroutine_threadsafe(
+                resp.send(
+                    dumps({"action": "status", "message": "Downloading resource ..."})
+                ),
+                loop,
+            )
 
             yt_dl.process_ie_result(data, download=True)
 
@@ -284,3 +293,4 @@ def download(
         files.append(get_video_name(media_id, width, height))
 
     return out, files
+

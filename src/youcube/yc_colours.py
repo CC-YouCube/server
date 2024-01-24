@@ -13,6 +13,7 @@ class Foreground:
     """
     [3-bit and 4-bit](https://en.wikipedia.org/wiki/ANSI_escape_code#3-bit_and_4-bit)
     """
+
     BLACK = "\033[30m"
     RED = "\033[31m"
     GREEN = "\033[32m"
@@ -35,3 +36,4 @@ class Foreground:
 
 
 RESET = "\033[m"
+

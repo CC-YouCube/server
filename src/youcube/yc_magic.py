@@ -6,12 +6,12 @@ Black Magic with threads, asyncio and subprocesses
 """
 
 # Built-in modules
-from typing import Any, Callable
-from types import FrameType
-from threading import Thread
-from subprocess import Popen, PIPE
 from asyncio import Event
+from subprocess import PIPE, Popen
 from sys import settrace
+from threading import Thread
+from types import FrameType
+from typing import Any, Callable
 
 
 class ThreadSaveAsyncioEventWithReturnValue(Event):
@@ -33,9 +33,7 @@ class ThreadSaveAsyncioEventWithReturnValue(Event):
 
 
 def run_with_thread_save_asyncio_event_with_return_value(
-    event: ThreadSaveAsyncioEventWithReturnValue,
-    func: Callable[[], Any],
-    *args
+    event: ThreadSaveAsyncioEventWithReturnValue, func: Callable[[], Any], *args
 ) -> None:
     """
     Runs a function and calls a ThreadSaveAsyncioEventWithReturnValue
@@ -47,8 +45,7 @@ def run_with_thread_save_asyncio_event_with_return_value(
 
 
 async def run_function_in_thread_from_async_function(
-    func: Callable[[], Any],
-    *args
+    func: Callable[[], Any], *args
 ) -> object:
     """
     Runs a function in a thread from an async function
@@ -56,7 +53,7 @@ async def run_function_in_thread_from_async_function(
     event = ThreadSaveAsyncioEventWithReturnValue()
     Thread(
         target=run_with_thread_save_asyncio_event_with_return_value,
-        args=(event, func, *args)
+        args=(event, func, *args),
     ).start()
     await event.wait()
     return event.result
@@ -88,7 +85,7 @@ class KillableThread(Thread):
         """
         Allows calling "localtrace" from global
         """
-        if event == 'call':
+        if event == "call":
             return self.localtrace
         return None
 
@@ -97,7 +94,7 @@ class KillableThread(Thread):
         """
         Uses trace to check if the Thread needs to be killed
         """
-        if self.killed and event == 'line':
+        if self.killed and event == "line":
             raise SystemExit()
         return self.localtrace
 
@@ -110,11 +107,7 @@ def run_with_live_output(cmd: list, handler: Callable[[str], None]) -> int:
     """
     Runs a subprocess and allows handling output live
     """
-    with Popen(
-        cmd,
-        stdout=PIPE,
-        stderr=PIPE
-    ) as process:
+    with Popen(cmd, stdout=PIPE, stderr=PIPE) as process:
 
         def live_output():
             line = []
@@ -135,4 +128,6 @@ def run_with_live_output(cmd: list, handler: Callable[[str], None]) -> int:
 
         return process.returncode
 
+
 # pylint: disable=unused-argument
+

@@ -1,14 +1,14 @@
 version: "2.0"
 services:
-    youcube:
-        build: .
-        image: youcube:nvidia
-        restart: always
-        hostname: youcube
-        ports:
-            - 5000:5000
-        #env_file: .env
-        runtime: nvidia
-        environment:
-            - NVIDIA_VISIBLE_DEVICES=all
-            - NVIDIA_DRIVER_CAPABILITIES=compute
+  youcube:
+    build: .
+    image: youcube:nvidia
+    restart: always
+    hostname: youcube
+    ports:
+      - 5000:5000
+    #env_file: .env
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute
