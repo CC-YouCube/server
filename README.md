@@ -36,7 +36,7 @@ python src/youcube.py
 Environment variables you can use to configure the server:
 
 | Variable                      | Default    | Description                                                                                                        |
-|-------------------------------|------------|--------------------------------------------------------------------------------------------------------------------|
+| ----------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------ |
 | `HOST`                        | `0.0.0.0`  | The host where the web server runs on.                                                                             |
 | `PORT`                        | `5000`     | The port where the web server should run on                                                                        |
 | `FFMPEG_PATH`                 | `ffmpeg`   | Path to the FFmpeg executable                                                                                      |
@@ -55,7 +55,7 @@ And [Sanic Builtin values].
 ## Docker Compose
 
 ```yml
-version: "2.0"
+---
 services:
   youcube:
     image: ghcr.io/cc-youcube/youcube:latest
@@ -63,6 +63,7 @@ services:
     hostname: youcube
     ports:
       - 5000:5000
+...
 ```
 
 [spotify application]: https://developer.spotify.com/dashboard/applications

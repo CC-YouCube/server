@@ -7,19 +7,21 @@ Everything logging related
 
 # Built-in modules
 from logging import (
-    Formatter,
-    Logger,
-    StreamHandler,
-    LogRecord,
-    getLogger,
+    CRITICAL,
     DEBUG,
+    ERROR,
     INFO,
     WARNING,
-    ERROR,
-    CRITICAL
+    Formatter,
+    Logger,
+    LogRecord,
+    StreamHandler,
+    getLogger,
 )
 from os import getenv
-from yc_colours import Foreground, RESET
+
+# local modules
+from yc_colours import RESET, Foreground
 
 LOGLEVEL = getenv("LOGLEVEL") or DEBUG
 NO_COLOR = getenv("NO_COLOR") or False
@@ -40,7 +42,7 @@ class ColordFormatter(Formatter):
             INFO: f"{Foreground.BRIGHT_WHITE}{self.fmt}{RESET}",
             WARNING: f"{Foreground.BRIGHT_YELLOW}{self.fmt}{RESET}",
             ERROR: f"{Foreground.BRIGHT_RED}{self.fmt}{RESET}",
-            CRITICAL: f"{Foreground.RED}{self.fmt}{RESET}"
+            CRITICAL: f"{Foreground.RED}{self.fmt}{RESET}",
         }
 
     def format(self, record: LogRecord) -> str:
@@ -63,7 +65,7 @@ class YTDLPLogger:
 
         # For compatibility with youtube-dl, both debug and info are passed into debug
         # You can distinguish them by the prefix '[debug] '
-        if msg.startswith('[debug] '):
+        if msg.startswith("[debug] "):
             pass
         else:
             self.info(msg)
@@ -87,9 +89,7 @@ def setup_logging() -> Logger:
 
     # noinspection SpellCheckingInspection
     if NO_COLOR:
-        formatter = Formatter(
-            fmt="[%(asctime)s %(levelname)s] [YouCube] %(message)s"
-        )
+        formatter = Formatter(fmt="[%(asctime)s %(levelname)s] [YouCube] %(message)s")
     else:
         formatter = ColordFormatter(
             # pylint: disable-next=line-too-long

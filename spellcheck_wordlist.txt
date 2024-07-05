@@ -9,14 +9,17 @@ Popen
 ffmpeg
 subprocess
 utils
+spotipy
 
 # Web Development
 websocket
 YouCube
 Spotify
 html
+dev
 
 # Programming Keywords
+str
 env
 untrusted
 usr
@@ -64,9 +67,15 @@ github
 dlp
 geeksforgeeks
 www
+metalink
 
 # Video Streaming
 yc
 yt
 dl
 youtube
+
+# Other
+f'Attachment
+WIP
+xml

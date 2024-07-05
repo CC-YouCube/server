@@ -11,7 +11,7 @@ on:
             - "src/**"
 
 jobs:
-    build-image:
+    build-alpine-image:
         runs-on: ubuntu-latest
 
         steps:
@@ -22,6 +22,13 @@ jobs:
               uses: docker/build-push-action@v4
               with:
                   context: src
+
+    build-nvidia-image:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout 🛎️
+              uses: actions/checkout@v3
 
             - name: Build nvidia image 🔨
               uses: docker/build-push-action@v4

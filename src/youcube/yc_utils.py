@@ -6,10 +6,11 @@ Utils for string manipulation, data management etc.
 """
 
 # Built-in modules
-from re import RegexFlag, compile as re_compile
-from typing import Tuple
 from os import mkdir
-from os.path import join, dirname, abspath, exists
+from os.path import abspath, dirname, exists, join
+from re import RegexFlag
+from re import compile as re_compile
+from typing import Tuple
 
 
 def remove_whitespace(string: str) -> str:
@@ -20,7 +21,8 @@ def remove_whitespace(string: str) -> str:
 
 
 # Only compile "ansi_escape_codes" once
-ansi_escape_codes = re_compile(r'''
+ansi_escape_codes = re_compile(
+    r"""
     \x1B  # ESC
     (?:   # 7-bit C1 Fe (except CSI)
         [@-Z\\-_]
@@ -30,7 +32,9 @@ ansi_escape_codes = re_compile(r'''
         [ -/]*  # Intermediate bytes
         [@-~]   # Final byte
     )
-''', RegexFlag.VERBOSE)
+""",
+    RegexFlag.VERBOSE,
+)
 
 
 def remove_ansi_escape_codes(text: str) -> str:
@@ -38,7 +42,7 @@ def remove_ansi_escape_codes(text: str) -> str:
     Remove all Ansi Escape codes
     (7-bit C1 ANSI sequences)
     """
-    return ansi_escape_codes.sub('', text)
+    return ansi_escape_codes.sub("", text)
 
 
 def cap_width(width: int) -> int:
@@ -98,7 +102,7 @@ def is_video_already_downloaded(media_id: str, width: int, height: int) -> bool:
 
 
 # Only compile "allowed_characters" once
-allowed_characters = re_compile('^[a-zA-Z0-9-._]*$')
+allowed_characters = re_compile("^[a-zA-Z0-9-._]*$")
 
 
 def is_save(string: str) -> bool:
