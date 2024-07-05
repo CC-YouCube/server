@@ -66,6 +66,11 @@ CHUNKS_AT_ONCE = CHUNK_SIZE * 256
 
 FRAMES_AT_ONCE = 10
 
+# pylint settings
+# pylint: disable=pointless-string-statement
+# pylint: disable=fixme
+# pylint: disable=multiple-statements
+
 """
 Ubuntu nvida support fix and maby alpine support ?
 us async base64 ?
@@ -122,11 +127,6 @@ Audio u. Video preview / thumbnail:
  - as 1 qtv frame
  - as 1 32vid frame
 """
-
-# pylint settings
-# pylint: disable=pointless-string-statement
-# pylint: disable=fixme
-# pylint: disable=multiple-statements
 
 logger = setup_logging()
 # TODO: change sanic logging format
