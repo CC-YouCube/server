@@ -18,8 +18,8 @@ from typing import Any, List, Tuple, Type, Union
 
 # optional pip module
 try:
-    from ujson import JSONDecodeError, dumps
-    from ujson import loads as load_json
+    from orjson import JSONDecodeError, dumps
+    from orjson import loads as load_json
 except ModuleNotFoundError:
     from json import dumps
     from json import loads as load_json
@@ -237,7 +237,7 @@ class Actions:
             file = join(DATA_FOLDER, file_name)
 
             request.app.shared_ctx.data[file_name] = datetime.now()
-            chunk = await get_chunk(file, chunkindex)
+            chunk = await getchunk(file, chunkindex)
 
             return {"action": "chunk", "chunk": b64encode(chunk).decode("ascii")}
         logger.warning("User tried to use special Characters")
@@ -307,7 +307,7 @@ class CustomErrorHandler(ErrorHandler):
         return super().default(request, exception)
 
 
-app = Sanic(__name__)
+app = Sanic("youcube")
 app.error_handler = CustomErrorHandler()
 # FIXME: The Client is not Responsing to Websocket pings
 app.config.WEBSOCKET_PING_INTERVAL = 0
@@ -378,10 +378,10 @@ async def main_start(app: Sanic):
 
 @app.route("/dfpwm/<id:str>/<chunkindex:int>")
 async def stream_dfpwm(request: Request, id: str, chunkindex: int):
-    return raw(await get_chunk(join(DATA_FOLDER, get_audio_name(id)), chunkindex))
+    return raw(await getchunk(join(DATA_FOLDER, get_audio_name(id)), chunkindex))
 
 
-@app.route("/32vid/<id:str>/<width:int>/<height:int>/<tracker:int>", stream=True)
+@app.route("/32vid/<id:str>/<width:int>/<height:int>/<tracker:int>")  # , stream=True
 async def stream_32vid(
     request: Request, id: str, width: int, height: int, tracker: int
 ):

@@ -1,4 +1,4 @@
-version: "2.0"
+---
 services:
   youcube:
     build: .
@@ -8,3 +8,4 @@ services:
     ports:
       - 5000:5000
     #env_file: .env
+...

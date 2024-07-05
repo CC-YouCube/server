@@ -29,7 +29,7 @@ from yc_utils import (
 
 # optional pip modules
 try:
-    from ujson import dumps
+    from orjson import dumps
 except ModuleNotFoundError:
     from json import dumps
 
