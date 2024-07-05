@@ -108,4 +108,3 @@ allowed_characters = re_compile("^[a-zA-Z0-9-._]*$")
 def is_save(string: str) -> bool:
     """Returns True if the given string does not contain special characters"""
     return bool(allowed_characters.match(string))
-

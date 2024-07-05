@@ -293,4 +293,3 @@ def download(
         files.append(get_video_name(media_id, width, height))
 
     return out, files
-

@@ -55,7 +55,7 @@ And [Sanic Builtin values].
 ## Docker Compose
 
 ```yml
-version: "2.0"
+---
 services:
   youcube:
     image: ghcr.io/cc-youcube/youcube:latest
@@ -63,6 +63,7 @@ services:
     hostname: youcube
     ports:
       - 5000:5000
+...
 ```
 
 [spotify application]: https://developer.spotify.com/dashboard/applications

@@ -130,4 +130,3 @@ def run_with_live_output(cmd: list, handler: Callable[[str], None]) -> int:
 
 
 # pylint: disable=unused-argument
-

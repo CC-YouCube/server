@@ -36,4 +36,3 @@ class Foreground:
 
 
 RESET = "\033[m"
-

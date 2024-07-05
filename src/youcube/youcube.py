@@ -83,7 +83,8 @@ the speaker can accept a maximum of 128 x 1024 samples 16KiB
 
 playAudio
 This accepts a list of audio samples as amplitudes between -128 and 127.
-These are stored in an internal buffer and played back at 48kHz. If this buffer is full, this function will return false.
+These are stored in an internal buffer and played back at 48kHz.
+If this buffer is full, this function will return false.
 """
 
 """Related CC-Tweaked issues
@@ -469,4 +470,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

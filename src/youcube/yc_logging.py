@@ -101,4 +101,3 @@ def setup_logging() -> Logger:
     logger.addHandler(logging_handler)
 
     return logger
-
