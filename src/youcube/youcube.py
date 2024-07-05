@@ -90,9 +90,11 @@ If this buffer is full, this function will return false.
 """Related CC-Tweaked issues
 Streaming HTTP response https://github.com/cc-tweaked/CC-Tweaked/issues/1181
 Speaker Networks        https://github.com/cc-tweaked/CC-Tweaked/issues/1488
-Pocket computers do not have many usecases without network access https://github.com/cc-tweaked/CC-Tweaked/issues/1406
+Pocket computers do not have many usecases without network access
+https://github.com/cc-tweaked/CC-Tweaked/issues/1406
 Speaker limit to 8      https://github.com/cc-tweaked/CC-Tweaked/issues/1313
-Some way to notify player through pocket computer with modem https://github.com/cc-tweaked/CC-Tweaked/issues/1148
+Some way to notify player through pocket computer with modem
+https://github.com/cc-tweaked/CC-Tweaked/issues/1148
 Memory limits for computers https://github.com/cc-tweaked/CC-Tweaked/issues/1580
 """
 
@@ -377,18 +379,20 @@ async def main_start(app: Sanic):
         logger.info("Spotipy Disabled")
 
 
-@app.route("/dfpwm/<id:str>/<chunkindex:int>")
-async def stream_dfpwm(request: Request, id: str, chunkindex: int):
-    return raw(await getchunk(join(DATA_FOLDER, get_audio_name(id)), chunkindex))
+@app.route("/dfpwm/<media_id:str>/<chunkindex:int>")
+async def stream_dfpwm(_request: Request, media_id: str, chunkindex: int):
+    """WIP HTTP mode"""
+    return raw(await getchunk(join(DATA_FOLDER, get_audio_name(media_id)), chunkindex))
 
 
-@app.route("/32vid/<id:str>/<width:int>/<height:int>/<tracker:int>")  # , stream=True
+@app.route("/32vid/<media_id:str>/<width:int>/<height:int>/<tracker:int>")  # , stream=True
 async def stream_32vid(
-    request: Request, id: str, width: int, height: int, tracker: int
+    _request: Request, media_id: str, width: int, height: int, tracker: int
 ):
+    """WIP HTTP mode"""
     return raw(
         "\n".join(
-            await get_vid(join(DATA_FOLDER, get_video_name(id, width, height)), tracker)
+            await get_vid(join(DATA_FOLDER, get_video_name(media_id, width, height)), tracker)
         )
     )
 
