@@ -2,18 +2,18 @@ FROM ghcr.io/commandcracker/ffmpeg:latest AS ffmpeg
 
 FROM ffmpeg AS sanjuuni
 
-ENV SANJUUNI_VERSION=778644b164c8877e56f9f5512480dde857133815
+ENV SANJUUNI_VERSION=49cb275d4ef64d2bee3d5d2cbc5baf47787bedc2
 
-ARG SANJUUNI_SHA512SUM="353b97e53ec2daba3046b3062c8a389c75066ea410f9abe089467a4648e83afe926cd65ad0904a0d59eca0520e3174e0f3190987cfee3abbdc9141a04a80ef1a *sanjuuni.tar.gz"
+ARG SANJUUNI_SHA512SUM="22c85f9a5c16c0acb4dde971b64f53e765a8d607065e7a25115103925124e33a0680da3790e85c4343b7d320a0170b6ae096ec7f2b48b22582cf96681fd3a78c *sanjuuni.tar.gz"
 
 SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 
 RUN set -eux; \
   apk add --no-cache --update \
-  g++=13.2.1_git20240309-r0 \
-  zlib-dev=1.3.1-r1 \
-  poco-dev=1.12.4-r0 \
-  make=4.4.1-r2; \
+  g++ \
+  zlib-dev \
+  poco-dev \
+  make; \
   wget -q --output-document=sanjuuni.tar.gz https://github.com/MCJack123/sanjuuni/archive/${SANJUUNI_VERSION}.tar.gz; \
   echo "${SANJUUNI_SHA512SUM}" | sha512sum -c -; \
   mkdir --parents sanjuuni; \
@@ -35,7 +35,7 @@ COPY youcube ./youcube
 COPY compile.py .
 
 RUN set -eux; \
-  apk add --no-cache --update build-base=0.5-r3; \
+  apk add --no-cache --update build-base; \
   pip install --no-cache-dir -U setuptools -r requirements.txt; \
   python3 compile.py; \
   pip uninstall pip -y
@@ -49,17 +49,17 @@ RUN set -eux; \
   # CVE-2024-5535 TODO: remove when base image is updated
   openssl \
   # pypy requirements
-  libffi=3.4.6-r0 libbz2=1.0.8-r6 \
+  libffi libbz2 \
   # sanjuuni requirements
-  poco=1.12.4-r0 \
+  poco \
   # ffmpeg requirements
-  libgcc=13.2.1_git20240309-r0 \
-  libstdc++=13.2.1_git20240309-r0 \
-  ca-certificates=20240226-r0 \
-  libgomp=13.2.1_git20240309-r0 \
-  expat=2.6.2-r0; \
+  libgcc \
+  libstdc++ \
+  ca-certificates \
+  libgomp \
+  expat; \
   apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/v3.18/community libssl1.1=1.1.1u-r1 libcrypto1.1=1.1.1u-r1; \
-  chown 1000 /opt/server/
+  chown 1000:1000 /opt/server/
 
 COPY --from=builder /opt/pypy /opt/pypy
 # add ffmpeg
@@ -68,6 +68,8 @@ COPY --from=ffmpeg /usr/local /usr/local
 COPY --from=sanjuuni /sanjuuni/sanjuuni /usr/local/bin
 
 ENV \
+  # Make sure, that the container is accessible from outside
+  HOST=0.0.0.0 \
   # Make sure we use the virtualenv:
   PATH="/opt/pypy/bin:$PATH" \
   # Use ffmpeg libs
@@ -77,7 +79,7 @@ ENV \
   # FIXME: Add UVLOOP support for alpine pypy
   SANIC_NO_UVLOOP=true
 
-USER 1000
+USER 1000:1000
 
 COPY --from=builder /youcube/__pycache__ /opt/server
 

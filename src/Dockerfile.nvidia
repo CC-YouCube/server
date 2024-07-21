@@ -4,20 +4,20 @@ FROM ghcr.io/commandcracker/ubuntu-ffmpeg:latest AS ffmpeg
 
 FROM ffmpeg AS sanjuuni
 
-ENV SANJUUNI_VERSION=778644b164c8877e56f9f5512480dde857133815
+ENV SANJUUNI_VERSION=49cb275d4ef64d2bee3d5d2cbc5baf47787bedc2
 
-ARG SANJUUNI_SHA512SUM="353b97e53ec2daba3046b3062c8a389c75066ea410f9abe089467a4648e83afe926cd65ad0904a0d59eca0520e3174e0f3190987cfee3abbdc9141a04a80ef1a *sanjuuni.tar.gz"
+ARG SANJUUNI_SHA512SUM="22c85f9a5c16c0acb4dde971b64f53e765a8d607065e7a25115103925124e33a0680da3790e85c4343b7d320a0170b6ae096ec7f2b48b22582cf96681fd3a78c *sanjuuni.tar.gz"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
-  ocl-icd-opencl-dev=2.2.14-3 \
-  wget=1.21.2-2ubuntu1.1 \
-  clang=1:14.0-55~exp2 \
-  make=4.3-4.1build1 \
-  libpoco-dev=1.11.0-3; \
+  ocl-icd-opencl-dev \
+  wget \
+  clang \
+  make \
+  libpoco-dev; \
   wget --progress=dot:giga --output-document=sanjuuni.tar.gz https://github.com/MCJack123/sanjuuni/archive/${SANJUUNI_VERSION}.tar.gz; \
   echo "${SANJUUNI_SHA512SUM}" | sha512sum -c -; \
   mkdir --parents sanjuuni; \
@@ -36,7 +36,7 @@ WORKDIR /youcube
 COPY --from=sanjuuni /sanjuuni/sanjuuni /usr/local/bin
 
 COPY requirements.txt .
-COPY youcube /youcube
+COPY --chown=1000:1000 youcube/*.py /youcube
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -44,16 +44,23 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN set -eux; \
   apt-get update; \
   apt-get install -y --no-install-recommends \
-  libpoco-dev=1.11.0-3 \
-  python3-pip=22.0.2+dfsg-1 \
+  libpoco-dev \
+  python3-pip \
   ocl-icd-libopencl1; \
-  pip install -U pip; \
-  pip install --no-cache-dir -r requirements.txt; \
+  pip install --break-system-packages --no-cache-dir -r requirements.txt; \
+  rm requirements.txt __main__.py; \
+  chown 1000:1000 /youcube/; \
   mkdir -p /etc/OpenCL/vendors; \
   echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
 
 ENV \
   NVIDIA_VISIBLE_DEVICES=all \
-  NVIDIA_DRIVER_CAPABILITIES=compute,utility
+  NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+  # Make sure, that the container is accessible from outside
+  HOST=0.0.0.0 \
+  # yt-dlp cache dir
+  XDG_CACHE_HOME="/youcube/.yt-dlp-cache"
+
+USER 1000:1000
 
 ENTRYPOINT ["python3", "youcube.py"]
